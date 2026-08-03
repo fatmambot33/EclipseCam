@@ -4,6 +4,7 @@
 - Track: `internal`
 - Status: `completed`
 - Requested: 2026-08-03
+- Retry: 2
 
 This file intentionally triggers `.github/workflows/publish-play.yml`.
 
