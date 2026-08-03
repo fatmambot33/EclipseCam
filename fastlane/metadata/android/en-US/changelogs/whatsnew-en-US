@@ -1,8 +1,9 @@
-EclipseCam development release.
+EclipseCam 0.0.1 — Foundation
 
-• Phone-first eclipse preparation
-• Local eclipse and observer calculations
-• Camera alignment and automated capture foundations
-• Google Maps eclipse-position overlay
+• First Android technical preview
+• Phone-first eclipse preparation foundation
+• Local observer and eclipse model architecture
+• CameraX and Google Maps integration foundations
+• Automated GitHub build and Play release pipeline
 
-This testing release is intended for validation on physical Android phones.
+This early internal-testing build is for installation and pipeline validation. Precise eclipse calculations and automatic field capture are still under development.
