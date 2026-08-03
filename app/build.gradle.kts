@@ -72,7 +72,9 @@ android {
 
 dependencies {
     implementation(platform("androidx.compose:compose-bom:2026.06.00"))
-    implementation("androidx.activity:activity-compose:1.11.0")
+    // AGP 8.8.x is used by the project. Activity 1.11 requires AGP 8.9.1,
+    // so keep the latest compatible Activity release until the build toolchain is upgraded.
+    implementation("androidx.activity:activity-compose:1.10.1")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material-icons-extended")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.9.2")
