@@ -1,26 +1,24 @@
-name: EclipseCam Android
+name: Android CI
 
 on:
-  workflow_dispatch:
-    inputs:
-      build_type:
-        description: Build to create
-        required: true
-        default: debug
-        type: choice
-        options:
-          - debug
-          - play-release
+  pull_request:
+    branches: [main]
   push:
     branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read
 
+concurrency:
+  group: android-ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  build:
+  validate:
     runs-on: ubuntu-latest
     timeout-minutes: 40
+
     steps:
       - uses: actions/checkout@v4
 
@@ -38,48 +36,24 @@ jobs:
       - name: Install Android SDK 36
         run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
 
-      - name: Restore upload keystore
-        if: github.event_name == 'workflow_dispatch' && inputs.build_type == 'play-release'
-        env:
-          KEYSTORE_BASE64: ${{ secrets.ECLIPSE_CAM_KEYSTORE_BASE64 }}
-        run: |
-          test -n "$KEYSTORE_BASE64"
-          mkdir -p "$RUNNER_TEMP/eclipsecam-signing"
-          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/eclipsecam-signing/eclipsecam-upload.jks"
-          chmod 600 "$RUNNER_TEMP/eclipsecam-signing/eclipsecam-upload.jks"
-
-      - name: Test and build debug APK
-        if: github.event_name != 'workflow_dispatch' || inputs.build_type == 'debug'
+      - name: Test, lint and build debug APK
         env:
           MAPS_API_KEY: ${{ secrets.MAPS_API_KEY }}
         run: gradle --no-daemon testDebugUnitTest lintDebug assembleDebug
 
-      - name: Build signed Play bundle
-        if: github.event_name == 'workflow_dispatch' && inputs.build_type == 'play-release'
-        env:
-          MAPS_API_KEY: ${{ secrets.MAPS_API_KEY }}
-          ECLIPSE_CAM_STORE_FILE: ${{ runner.temp }}/eclipsecam-signing/eclipsecam-upload.jks
-          ECLIPSE_CAM_STORE_PASSWORD: ${{ secrets.ECLIPSE_CAM_STORE_PASSWORD }}
-          ECLIPSE_CAM_KEY_ALIAS: ${{ secrets.ECLIPSE_CAM_KEY_ALIAS }}
-          ECLIPSE_CAM_KEY_PASSWORD: ${{ secrets.ECLIPSE_CAM_KEY_PASSWORD }}
-        run: gradle --no-daemon clean testDebugUnitTest lintRelease bundleRelease
-
       - name: Upload debug APK
-        if: github.event_name != 'workflow_dispatch' || inputs.build_type == 'debug'
         uses: actions/upload-artifact@v4
         with:
           name: EclipseCam-debug-${{ github.run_number }}
           path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
+          retention-days: 14
 
-      - name: Upload Play bundle
-        if: github.event_name == 'workflow_dispatch' && inputs.build_type == 'play-release'
+      - name: Upload lint report
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: EclipseCam-Play-${{ github.run_number }}
-          path: app/build/outputs/bundle/release/*.aab
-          if-no-files-found: error
-
-      - name: Remove keystore
-        if: always()
-        run: rm -rf "$RUNNER_TEMP/eclipsecam-signing"
+          name: EclipseCam-lint-${{ github.run_number }}
+          path: app/build/reports/lint-results-debug.*
+          if-no-files-found: ignore
+          retention-days: 14
