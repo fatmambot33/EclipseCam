@@ -1,19 +1,8 @@
-import java.util.Properties
-
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")
 }
-
-val localProperties = Properties().apply {
-    val file = rootProject.file("local.properties")
-    if (file.exists()) file.inputStream().use(::load)
-}
-
-val mapsApiKey = localProperties.getProperty("MAPS_API_KEY")
-    ?: providers.environmentVariable("MAPS_API_KEY").orNull
-    ?: "REPLACE_WITH_RESTRICTED_ANDROID_KEY"
 
 val ciVersionCode = providers.environmentVariable("ECLIPSE_CAM_VERSION_CODE")
     .orElse("1")
@@ -33,7 +22,6 @@ android {
         versionCode = ciVersionCode.get()
         versionName = ciVersionName.get()
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        manifestPlaceholders["MAPS_API_KEY"] = mapsApiKey
     }
 
     signingConfigs {
@@ -83,7 +71,7 @@ dependencies {
     implementation("androidx.camera:camera-lifecycle:1.4.2")
     implementation("androidx.camera:camera-view:1.4.2")
     implementation("androidx.core:core-ktx:1.16.0")
-    implementation("com.google.maps.android:maps-compose:6.12.0")
+    implementation("org.maplibre.gl:android-sdk:13.0.2")
 
     testImplementation("junit:junit:4.13.2")
 }
