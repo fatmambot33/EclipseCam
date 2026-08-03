@@ -1,5 +1,7 @@
 package com.fatmambo33.eclipsecam.astronomy.localcircumstances
 
+import java.time.Duration
+import java.time.Instant
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
@@ -32,6 +34,76 @@ class BesselianLocalCircumstancesCalculatorTest {
     }
 
     @Test
+    fun `matches NASA published circumstances for five reference cities`() {
+        val references = listOf(
+            ReferenceCity(
+                name = "Reykjavik",
+                observer = Observer(64.1466, -21.9426, 15.0),
+                visibility = EclipseVisibility.TOTAL,
+                expectedContactsUtc = mapOf(
+                    EclipseContact.C1 to "2026-08-12T16:47:00Z",
+                    EclipseContact.C2 to "2026-08-12T17:48:00Z",
+                    EclipseContact.C3 to "2026-08-12T17:49:00Z",
+                    EclipseContact.C4 to "2026-08-12T18:47:00Z",
+                ),
+            ),
+            ReferenceCity(
+                name = "Leon",
+                observer = Observer(42.5987, -5.5671, 837.0),
+                visibility = EclipseVisibility.TOTAL,
+                expectedContactsUtc = mapOf(
+                    EclipseContact.C1 to "2026-08-12T17:32:00Z",
+                    EclipseContact.C2 to "2026-08-12T18:28:00Z",
+                    EclipseContact.C3 to "2026-08-12T18:30:00Z",
+                    EclipseContact.C4 to "2026-08-12T19:22:00Z",
+                ),
+            ),
+            ReferenceCity(
+                name = "Valencia",
+                observer = Observer(39.4699, -0.3763, 15.0),
+                visibility = EclipseVisibility.TOTAL,
+                expectedContactsUtc = mapOf(
+                    EclipseContact.C1 to "2026-08-12T17:38:00Z",
+                    EclipseContact.C2 to "2026-08-12T18:32:00Z",
+                    EclipseContact.C3 to "2026-08-12T18:33:00Z",
+                ),
+            ),
+            ReferenceCity(
+                name = "Zaragoza",
+                observer = Observer(41.6488, -0.8891, 208.0),
+                visibility = EclipseVisibility.TOTAL,
+                expectedContactsUtc = mapOf(
+                    EclipseContact.C1 to "2026-08-12T17:34:00Z",
+                    EclipseContact.C2 to "2026-08-12T18:29:00Z",
+                    EclipseContact.C3 to "2026-08-12T18:30:00Z",
+                ),
+            ),
+            ReferenceCity(
+                name = "Barcelona",
+                observer = Observer(41.3874, 2.1686, 12.0),
+                visibility = EclipseVisibility.PARTIAL,
+                expectedContactsUtc = mapOf(
+                    EclipseContact.C1 to "2026-08-12T17:35:00Z",
+                ),
+            ),
+        )
+
+        references.forEach { reference ->
+            val result = calculator.calculate(reference.observer)
+            assertEquals(reference.name, reference.visibility, result.visibility)
+            reference.expectedContactsUtc.forEach { (contact, expectedText) ->
+                val actual = result.contacts.getValue(contact).instantUtc
+                val expected = Instant.parse(expectedText)
+                val difference = kotlin.math.abs(Duration.between(expected, actual).seconds)
+                assertTrue(
+                    "${reference.name} $contact differs by $difference seconds",
+                    difference <= REFERENCE_TOLERANCE_SECONDS,
+                )
+            }
+        }
+    }
+
+    @Test
     fun `observer far from eclipse returns no eclipse in model window`() {
         val result = calculator.calculate(
             Observer(latitudeDegrees = -33.8688, longitudeDegrees = 151.2093),
@@ -58,5 +130,18 @@ class BesselianLocalCircumstancesCalculatorTest {
         }
         assertTrue(result.magnitude.isFinite())
         assertTrue(result.obscuration in 0.0..1.0)
+    }
+
+    private data class ReferenceCity(
+        val name: String,
+        val observer: Observer,
+        val visibility: EclipseVisibility,
+        val expectedContactsUtc: Map<EclipseContact, String>,
+    )
+
+    private companion object {
+        // NASA's public city table is rounded to whole minutes. The 90-second
+        // tolerance covers that rounding while still catching material solver drift.
+        const val REFERENCE_TOLERANCE_SECONDS = 90L
     }
 }
