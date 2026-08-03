@@ -1,0 +1,8 @@
+EclipseCam development release.
+
+• Phone-first eclipse preparation
+• Local eclipse and observer calculations
+• Camera alignment and automated capture foundations
+• Google Maps eclipse-position overlay
+
+This testing release is intended for validation on physical Android phones.
