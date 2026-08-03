@@ -10,9 +10,17 @@ val localProperties = Properties().apply {
     val file = rootProject.file("local.properties")
     if (file.exists()) file.inputStream().use(::load)
 }
+
 val mapsApiKey = localProperties.getProperty("MAPS_API_KEY")
     ?: providers.environmentVariable("MAPS_API_KEY").orNull
     ?: "REPLACE_WITH_RESTRICTED_ANDROID_KEY"
+
+val ciVersionCode = providers.environmentVariable("ECLIPSE_CAM_VERSION_CODE")
+    .orElse("11")
+    .map(String::toInt)
+
+val ciVersionName = providers.environmentVariable("ECLIPSE_CAM_VERSION_NAME")
+    .orElse("1.0.0-alpha01")
 
 android {
     namespace = "com.fatmambo33.eclipsecam"
@@ -22,8 +30,8 @@ android {
         applicationId = "com.fatmambo33.eclipsecam"
         minSdk = 26
         targetSdk = 36
-        versionCode = 11
-        versionName = "1.0.0-alpha01"
+        versionCode = ciVersionCode.get()
+        versionName = ciVersionName.get()
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         manifestPlaceholders["MAPS_API_KEY"] = mapsApiKey
     }
@@ -48,7 +56,10 @@ android {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
             if (providers.environmentVariable("ECLIPSE_CAM_STORE_FILE").isPresent) {
                 signingConfig = signingConfigs.getByName("release")
             }
