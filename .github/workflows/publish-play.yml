@@ -1,0 +1,166 @@
+name: Publish to Google Play
+
+on:
+  workflow_dispatch:
+    inputs:
+      track:
+        description: Google Play track
+        required: true
+        default: internal
+        type: choice
+        options:
+          - internal
+          - alpha
+          - beta
+          - production
+      status:
+        description: Release status
+        required: true
+        default: completed
+        type: choice
+        options:
+          - draft
+          - completed
+          - inProgress
+      version_name:
+        description: Version name shown to users
+        required: true
+        default: 1.0.0-alpha01
+        type: string
+      rollout_fraction:
+        description: Production staged rollout fraction, e.g. 0.1. Leave empty for non-production.
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: google-play-${{ inputs.track }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    outputs:
+      version_code: ${{ steps.version.outputs.version_code }}
+      version_name: ${{ steps.version.outputs.version_name }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.10.2'
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK 36
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Resolve unique version
+        id: version
+        shell: bash
+        run: |
+          VERSION_CODE=$((1000 + GITHUB_RUN_NUMBER))
+          echo "version_code=$VERSION_CODE" >> "$GITHUB_OUTPUT"
+          echo "version_name=${{ inputs.version_name }}" >> "$GITHUB_OUTPUT"
+
+      - name: Restore upload keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ECLIPSE_CAM_KEYSTORE_BASE64 }}
+        run: |
+          test -n "$KEYSTORE_BASE64"
+          mkdir -p "$RUNNER_TEMP/eclipsecam-signing"
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/eclipsecam-signing/eclipsecam-upload.jks"
+          chmod 600 "$RUNNER_TEMP/eclipsecam-signing/eclipsecam-upload.jks"
+
+      - name: Verify required secrets
+        env:
+          MAPS_API_KEY: ${{ secrets.MAPS_API_KEY }}
+          STORE_PASSWORD: ${{ secrets.ECLIPSE_CAM_STORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ECLIPSE_CAM_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ECLIPSE_CAM_KEY_PASSWORD }}
+          PLAY_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+        run: |
+          test -n "$MAPS_API_KEY"
+          test -n "$STORE_PASSWORD"
+          test -n "$KEY_ALIAS"
+          test -n "$KEY_PASSWORD"
+          test -n "$PLAY_JSON"
+
+      - name: Test, lint and build signed bundle
+        env:
+          MAPS_API_KEY: ${{ secrets.MAPS_API_KEY }}
+          ECLIPSE_CAM_STORE_FILE: ${{ runner.temp }}/eclipsecam-signing/eclipsecam-upload.jks
+          ECLIPSE_CAM_STORE_PASSWORD: ${{ secrets.ECLIPSE_CAM_STORE_PASSWORD }}
+          ECLIPSE_CAM_KEY_ALIAS: ${{ secrets.ECLIPSE_CAM_KEY_ALIAS }}
+          ECLIPSE_CAM_KEY_PASSWORD: ${{ secrets.ECLIPSE_CAM_KEY_PASSWORD }}
+          ECLIPSE_CAM_VERSION_CODE: ${{ steps.version.outputs.version_code }}
+          ECLIPSE_CAM_VERSION_NAME: ${{ steps.version.outputs.version_name }}
+        run: gradle --no-daemon clean testDebugUnitTest lintRelease bundleRelease
+
+      - name: Upload signed bundle artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: EclipseCam-${{ steps.version.outputs.version_name }}-${{ steps.version.outputs.version_code }}
+          path: app/build/outputs/bundle/release/*.aab
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload mapping artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: EclipseCam-mapping-${{ steps.version.outputs.version_code }}
+          path: app/build/outputs/mapping/release/mapping.txt
+          if-no-files-found: ignore
+          retention-days: 90
+
+      - name: Remove keystore
+        if: always()
+        run: rm -rf "$RUNNER_TEMP/eclipsecam-signing"
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: ${{ inputs.track == 'production' && 'google-play-production' || 'google-play-testing' }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download signed bundle
+        uses: actions/download-artifact@v4
+        with:
+          name: EclipseCam-${{ needs.build.outputs.version_name }}-${{ needs.build.outputs.version_code }}
+          path: release
+
+      - name: Publish without staged rollout
+        if: inputs.track != 'production' || inputs.rollout_fraction == ''
+        uses: r0adkll/upload-google-play@v1.1.5
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: com.fatmambo33.eclipsecam
+          releaseFiles: release/*.aab
+          tracks: ${{ inputs.track }}
+          status: ${{ inputs.status }}
+          whatsNewDirectory: fastlane/metadata/android/en-US/changelogs
+          mappingFile: app/build/outputs/mapping/release/mapping.txt
+
+      - name: Publish staged production rollout
+        if: inputs.track == 'production' && inputs.rollout_fraction != ''
+        uses: r0adkll/upload-google-play@v1.1.5
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: com.fatmambo33.eclipsecam
+          releaseFiles: release/*.aab
+          tracks: production
+          status: inProgress
+          userFraction: ${{ inputs.rollout_fraction }}
+          whatsNewDirectory: fastlane/metadata/android/en-US/changelogs
