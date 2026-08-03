@@ -16,11 +16,11 @@ val mapsApiKey = localProperties.getProperty("MAPS_API_KEY")
     ?: "REPLACE_WITH_RESTRICTED_ANDROID_KEY"
 
 val ciVersionCode = providers.environmentVariable("ECLIPSE_CAM_VERSION_CODE")
-    .orElse("11")
+    .orElse("1")
     .map(String::toInt)
 
 val ciVersionName = providers.environmentVariable("ECLIPSE_CAM_VERSION_NAME")
-    .orElse("1.0.0-alpha01")
+    .orElse("0.0.1")
 
 android {
     namespace = "com.fatmambo33.eclipsecam"
