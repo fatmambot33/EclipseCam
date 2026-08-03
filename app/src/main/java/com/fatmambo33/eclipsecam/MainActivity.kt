@@ -8,9 +8,9 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -40,7 +40,6 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -50,7 +49,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 import java.time.Duration
@@ -79,10 +77,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-private enum class AppTab(
-    val label: String,
-    val icon: ImageVector,
-) {
+private enum class AppTab(val label: String, val icon: ImageVector) {
     Camera("Camera", Icons.Default.CameraAlt),
     Live("Live", Icons.Default.NightsStay),
     Position("Position", Icons.Default.LocationOn),
@@ -92,7 +87,6 @@ private enum class AppTab(
 @Composable
 private fun EclipseCamApp() {
     var selectedTab by remember { mutableStateOf(AppTab.Camera) }
-
     Scaffold(
         containerColor = EclipseBackground,
         bottomBar = {
@@ -109,9 +103,7 @@ private fun EclipseCamApp() {
         },
     ) { padding ->
         Surface(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding),
+            modifier = Modifier.fillMaxSize().padding(padding),
             color = EclipseBackground,
         ) {
             when (selectedTab) {
@@ -128,49 +120,38 @@ private fun EclipseCamApp() {
 private fun CameraScreen() {
     val context = LocalContext.current
     var cameraGranted by remember {
-        mutableStateOf(
-            context.checkSelfPermission(Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED,
-        )
+        mutableStateOf(context.checkSelfPermission(Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED)
     }
-    val cameraPermission = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission(),
-    ) { granted -> cameraGranted = granted }
+    val cameraPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
+        cameraGranted = it
+    }
 
-    ScreenColumn(title = "Prepare your phone") {
+    ScreenColumn("Prepare your phone") {
         HeroCard(
-            title = if (cameraGranted) "Camera ready" else "Camera access needed",
-            message = if (cameraGranted) {
+            if (cameraGranted) "Camera ready" else "Camera access needed",
+            if (cameraGranted) {
                 "Mount the phone securely. Eclipse trajectory guidance will appear here as the scientific engine is validated."
             } else {
                 "EclipseCam needs camera access for alignment guidance and automatic capture."
             },
-            statusColor = if (cameraGranted) EclipseReady else EclipseWarning,
+            if (cameraGranted) EclipseReady else EclipseWarning,
         )
-
         Spacer(Modifier.height(16.dp))
         ReadinessRow("Camera", cameraGranted, if (cameraGranted) "Available" else "Permission required")
         ReadinessRow("Tripod", false, "Confirm before arming")
         ReadinessRow("Solar filter", false, "Required during partial phases")
         ReadinessRow("Scientific model", false, "Validation in progress")
-
         Spacer(Modifier.height(20.dp))
         if (!cameraGranted) {
             Button(
                 onClick = { cameraPermission.launch(Manifest.permission.CAMERA) },
                 modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text("Enable camera")
-            }
+            ) { Text("Enable camera") }
         } else {
-            Button(
-                onClick = {},
-                enabled = false,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
+            Button(onClick = {}, enabled = false, modifier = Modifier.fillMaxWidth()) {
                 Text("Automatic capture coming next")
             }
         }
-
         Spacer(Modifier.height(12.dp))
         Text(
             "Never look directly at the Sun without certified eclipse eye protection. Use an appropriate solar filter on the phone camera during partial phases.",
@@ -189,29 +170,28 @@ private fun LiveScreen() {
             nowEpochSeconds = Instant.now().epochSecond
         }
     }
-
     val referenceEvent = Instant.parse("2026-08-12T17:46:00Z")
     val remaining = Duration.between(Instant.ofEpochSecond(nowEpochSeconds), referenceEvent)
 
-    ScreenColumn(title = "Live eclipse status") {
+    ScreenColumn("Live eclipse status") {
         HeroCard(
-            title = "12 August 2026",
-            message = if (remaining.isNegative) {
+            "12 August 2026",
+            if (remaining.isNegative) {
                 "Reference event time has passed. Local circumstances still require validated GPS-based calculation."
             } else {
                 formatDuration(remaining)
             },
-            statusColor = EclipseAccent,
+            EclipseAccent,
         )
         Spacer(Modifier.height(16.dp))
         InfoCard(
-            title = "Local circumstances",
-            body = "Exact contacts, magnitude, obscuration, Sun altitude, and totality duration will be calculated locally from GPS after the validated Besselian engine is integrated.",
+            "Local circumstances",
+            "Exact contacts, magnitude, obscuration, Sun altitude, and totality duration will be calculated locally from GPS after the validated Besselian engine is integrated.",
         )
         Spacer(Modifier.height(12.dp))
         InfoCard(
-            title = "No network required",
-            body = "The astronomy engine, countdowns, sensor processing, capture plan, and media remain on the phone. Google Maps is only an optional online basemap.",
+            "No network required",
+            "The astronomy engine, countdowns, sensor processing, capture plan, and media remain on the phone. Google Maps is only an optional online basemap.",
         )
     }
 }
@@ -221,26 +201,23 @@ private fun PositionScreen() {
     val context = LocalContext.current
     var locationGranted by remember {
         mutableStateOf(
-            context.checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) ==
-                PackageManager.PERMISSION_GRANTED,
+            context.checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED,
         )
     }
-    val locationPermission = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestMultiplePermissions(),
-    ) { permissions ->
-        locationGranted = permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
-            permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+    val locationPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
+        locationGranted = it[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
+            it[Manifest.permission.ACCESS_COARSE_LOCATION] == true
     }
 
-    ScreenColumn(title = "Position against the eclipse") {
+    ScreenColumn("Position against the eclipse") {
         HeroCard(
-            title = if (locationGranted) "Location ready" else "Use your location",
-            message = if (locationGranted) {
+            if (locationGranted) "Location ready" else "Use your location",
+            if (locationGranted) {
                 "EclipseCam can calculate your relationship to the path locally. The bold centreline and path limits will appear after scientific validation."
             } else {
                 "Allow location so EclipseCam can tell you where to stand and how much totality you can gain by moving."
             },
-            statusColor = if (locationGranted) EclipseReady else EclipseWarning,
+            if (locationGranted) EclipseReady else EclipseWarning,
         )
         Spacer(Modifier.height(16.dp))
         if (!locationGranted) {
@@ -254,51 +231,40 @@ private fun PositionScreen() {
                     )
                 },
                 modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text("Enable location")
-            }
+            ) { Text("Enable location") }
         }
         Spacer(Modifier.height(12.dp))
         InfoCard(
-            title = "Observer-centred map",
-            body = "The finished map will prioritise you, the bold eclipse centreline, northern and southern limits, moving shadow, GPS uncertainty, and the best nearby position.",
+            "Observer-centred map",
+            "The finished map will prioritise you, the bold eclipse centreline, northern and southern limits, moving shadow, GPS uncertainty, and the best nearby position.",
         )
     }
 }
 
 @Composable
 private fun GalleryScreen() {
-    ScreenColumn(title = "Your eclipse sessions") {
+    ScreenColumn("Your eclipse sessions") {
         HeroCard(
-            title = "Nothing captured yet",
-            message = "Photos, timelapses, montages, and capture reports will stay on this phone until you explicitly share them.",
-            statusColor = Color(0xFF60A5FA),
+            "Nothing captured yet",
+            "Photos, timelapses, montages, and capture reports will stay on this phone until you explicitly share them.",
+            Color(0xFF60A5FA),
         )
         Spacer(Modifier.height(16.dp))
         InfoCard(
-            title = "Privacy by default",
-            body = "No account, no automatic upload, no advertising, and no behavioural analytics. Sharing will always use Android's explicit share sheet.",
+            "Privacy by default",
+            "No account, no automatic upload, no advertising, and no behavioural analytics. Sharing will always use Android's explicit share sheet.",
         )
     }
 }
 
 @Composable
-private fun ScreenColumn(
-    title: String,
-    content: @Composable Column.() -> Unit,
-) {
+private fun ScreenColumn(title: String, content: @Composable ColumnScope.() -> Unit) {
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 20.dp, vertical = 18.dp),
+        modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 18.dp),
     ) {
+        Text("EclipseCam", style = MaterialTheme.typography.labelLarge, color = EclipseAccent)
         Text(
-            text = "EclipseCam",
-            style = MaterialTheme.typography.labelLarge,
-            color = EclipseAccent,
-        )
-        Text(
-            text = title,
+            title,
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(top = 4.dp, bottom = 20.dp),
@@ -308,11 +274,7 @@ private fun ScreenColumn(
 }
 
 @Composable
-private fun HeroCard(
-    title: String,
-    message: String,
-    statusColor: Color,
-) {
+private fun HeroCard(title: String, message: String, statusColor: Color) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(24.dp),
@@ -320,40 +282,22 @@ private fun HeroCard(
     ) {
         Column(Modifier.padding(22.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    modifier = Modifier
-                        .size(12.dp)
-                        .background(statusColor, CircleShape),
-                )
+                Box(Modifier.size(12.dp).background(statusColor, CircleShape))
                 Spacer(Modifier.width(10.dp))
                 Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
             }
-            Text(
-                text = message,
-                modifier = Modifier.padding(top = 14.dp),
-                style = MaterialTheme.typography.bodyLarge,
-            )
+            Text(message, Modifier.padding(top = 14.dp), style = MaterialTheme.typography.bodyLarge)
         }
     }
 }
 
 @Composable
-private fun ReadinessRow(
-    label: String,
-    ready: Boolean,
-    detail: String,
-) {
+private fun ReadinessRow(label: String, ready: Boolean, detail: String) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp),
+        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(
-            modifier = Modifier
-                .size(10.dp)
-                .background(if (ready) EclipseReady else EclipseWarning, CircleShape),
-        )
+        Box(Modifier.size(10.dp).background(if (ready) EclipseReady else EclipseWarning, CircleShape))
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
             Text(label, fontWeight = FontWeight.SemiBold)
@@ -363,10 +307,7 @@ private fun ReadinessRow(
 }
 
 @Composable
-private fun InfoCard(
-    title: String,
-    body: String,
-) {
+private fun InfoCard(title: String, body: String) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(18.dp),
@@ -389,15 +330,5 @@ private fun formatDuration(duration: Duration): String {
     val hours = duration.minusDays(days).toHours()
     val minutes = duration.minusDays(days).minusHours(hours).toMinutes()
     val seconds = duration.minusDays(days).minusHours(hours).minusMinutes(minutes).seconds
-    return buildString {
-        append("Reference countdown\n")
-        append(days)
-        append("d ")
-        append(hours)
-        append("h ")
-        append(minutes)
-        append("m ")
-        append(seconds)
-        append("s")
-    }
+    return "Reference countdown\n${days}d ${hours}h ${minutes}m ${seconds}s"
 }
