@@ -72,8 +72,8 @@ android {
 
 dependencies {
     implementation(platform("androidx.compose:compose-bom:2026.06.00"))
-    // AGP 8.8.x is used by the project. Activity 1.11 requires AGP 8.9.1,
-    // so keep the latest compatible Activity release until the build toolchain is upgraded.
+    // AGP 8.8.x is used by the project. Activity 1.11 and Core 1.17 require
+    // AGP 8.9.1, so keep the latest compatible releases until the toolchain is upgraded.
     implementation("androidx.activity:activity-compose:1.10.1")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material-icons-extended")
@@ -84,7 +84,15 @@ dependencies {
     implementation("androidx.camera:camera-camera2:1.4.2")
     implementation("androidx.camera:camera-lifecycle:1.4.2")
     implementation("androidx.camera:camera-view:1.4.2")
-    implementation("androidx.core:core-ktx:1.16.0")
+    implementation("androidx.core:core-ktx") {
+        version { strictly("1.16.0") }
+    }
+    constraints {
+        implementation("androidx.core:core:1.16.0") {
+            version { strictly("1.16.0") }
+            because("AndroidX Core 1.17 requires AGP 8.9.1; this project uses AGP 8.8.2")
+        }
+    }
     implementation("com.google.maps.android:maps-compose:6.12.0")
 
     testImplementation("junit:junit:4.13.2")
