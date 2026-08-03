@@ -36,6 +36,11 @@ android {
         manifestPlaceholders["MAPS_API_KEY"] = mapsApiKey
     }
 
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+
     signingConfigs {
         create("release") {
             val storeFilePath = providers.environmentVariable("ECLIPSE_CAM_STORE_FILE").orNull
