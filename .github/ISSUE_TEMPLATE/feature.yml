@@ -1,0 +1,38 @@
+name: Feature work
+ description: Implement one scoped EclipseCam capability
+ title: "[Feature] "
+ body:
+   - type: markdown
+     attributes:
+       value: "Read PRODUCT.md and CONTRIBUTING.md before starting."
+   - type: textarea
+     id: outcome
+     attributes:
+       label: Product outcome
+       description: Which PRODUCT.md outcome does this improve?
+     validations:
+       required: true
+   - type: textarea
+     id: scope
+     attributes:
+       label: Scope
+     validations:
+       required: true
+   - type: textarea
+     id: acceptance
+     attributes:
+       label: Acceptance criteria
+       placeholder: "- [ ] ..."
+     validations:
+       required: true
+   - type: textarea
+     id: dependencies
+     attributes:
+       label: Dependencies and parallel-work boundaries
+   - type: textarea
+     id: validation
+     attributes:
+       label: Validation requirements
+       placeholder: "Unit tests, lint, screenshots, physical-device checks"
+     validations:
+       required: true
