@@ -11,10 +11,14 @@ The format follows Keep a Changelog and Semantic Versioning.
 - GPS provider, accuracy, altitude, capture time and staleness state
 - Mockable location flow connected to observer-to-centreline guidance
 - Graceful permission-denied, unavailable-provider and acquisition states
+- Deterministic rotation-vector processing for azimuth, elevation and roll
+- Display-rotation remapping, sensor confidence and explicit unavailable fallback
+- Unit coverage for orientation normalization, landscape mapping and invalid samples
 
 ### Validation still required
 - Android permission-transition instrumentation tests
 - Physical GPS and accuracy validation on the Pixel 7 Pro
+- Android sensor wiring and physical orientation validation on the Pixel 7 Pro
 
 ## [0.0.1] - 2026-08-03
 
