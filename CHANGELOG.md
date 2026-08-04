@@ -13,12 +13,15 @@ The format follows Keep a Changelog and Semantic Versioning.
 - Graceful permission-denied, unavailable-provider and acquisition states
 - Deterministic rotation-vector processing for azimuth, elevation and roll
 - Display-rotation remapping, sensor confidence and explicit unavailable fallback
-- Unit coverage for orientation normalization, landscape mapping and invalid samples
+- Lifecycle-scoped Android orientation repository using rotation-vector and gyroscope sensors
+- Rotation-vector fallback and safe unavailable state when orientation sensors cannot be registered
+- Unit coverage for orientation normalization, landscape mapping, gyroscope motion and invalid samples
 
 ### Validation still required
 - Android permission-transition instrumentation tests
 - Physical GPS and accuracy validation on the Pixel 7 Pro
-- Android sensor wiring and physical orientation validation on the Pixel 7 Pro
+- Android orientation instrumentation tests
+- Physical orientation validation on the Pixel 7 Pro in portrait, landscape, flat, mounted and moving states
 
 ## [0.0.1] - 2026-08-03
 
