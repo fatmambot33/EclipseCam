@@ -68,11 +68,11 @@ class CameraCapabilityInventory(context: Context) {
         } else {
             null
         }
+}
 
-    internal fun mapLensFacing(value: Int?): LensFacing = when (value) {
-        CameraCharacteristics.LENS_FACING_FRONT -> LensFacing.FRONT
-        CameraCharacteristics.LENS_FACING_BACK -> LensFacing.BACK
-        CameraCharacteristics.LENS_FACING_EXTERNAL -> LensFacing.EXTERNAL
-        else -> LensFacing.UNKNOWN
-    }
+internal fun mapLensFacing(value: Int?): LensFacing = when (value) {
+    CameraCharacteristics.LENS_FACING_FRONT -> LensFacing.FRONT
+    CameraCharacteristics.LENS_FACING_BACK -> LensFacing.BACK
+    CameraCharacteristics.LENS_FACING_EXTERNAL -> LensFacing.EXTERNAL
+    else -> LensFacing.UNKNOWN
 }
