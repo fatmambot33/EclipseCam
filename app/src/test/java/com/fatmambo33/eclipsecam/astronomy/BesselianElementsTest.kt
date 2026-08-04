@@ -1,5 +1,6 @@
 package com.fatmambo33.eclipsecam.astronomy
 
+import java.time.Instant
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -7,14 +8,14 @@ import org.junit.Test
 class BesselianElementsTest {
     @Test
     fun evaluatesReferenceEpoch() {
-        val instant = java.time.Instant.parse("2026-08-12T17:58:48.6Z")
+        val instant = Instant.parse("2026-08-12T17:58:44.600Z")
         val value = Eclipse2026Aug12.elements.evaluate(instant)
 
         assertEquals(0.0, value.tHours, 1e-8)
-        assertEquals(0.475593, value.x, 1e-9)
-        assertEquals(0.771161, value.y, 1e-9)
-        assertEquals(14.79667, value.declinationDegrees, 1e-9)
-        assertEquals(-0.008142, value.umbralRadius, 1e-9)
+        assertEquals(0.4755140, value.x, 1e-9)
+        assertEquals(0.7711830, value.y, 1e-9)
+        assertEquals(14.7966700, value.declinationDegrees, 1e-9)
+        assertEquals(-0.0081420, value.umbralRadius, 1e-9)
     }
 
     @Test
@@ -26,6 +27,6 @@ class BesselianElementsTest {
 
     @Test(expected = IllegalArgumentException::class)
     fun rejectsTimesOutsidePublishedValidityWindow() {
-        Eclipse2026Aug12.elements.evaluate(java.time.Instant.parse("2026-08-12T10:00:00Z"))
+        Eclipse2026Aug12.elements.evaluate(Instant.parse("2026-08-12T10:00:00Z"))
     }
 }
