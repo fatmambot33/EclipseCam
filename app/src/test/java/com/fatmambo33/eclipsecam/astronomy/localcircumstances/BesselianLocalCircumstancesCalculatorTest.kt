@@ -4,11 +4,36 @@ import java.time.Duration
 import java.time.Instant
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class BesselianLocalCircumstancesCalculatorTest {
     private val calculator = BesselianLocalCircumstancesCalculator()
+
+    @Test
+    fun `deterministic API accepts UTC instant and observer coordinates`() {
+        val observer = Observer(42.5987, -5.5671, 837.0)
+        val instant = Instant.parse("2026-08-12T18:00:00Z")
+
+        val first = calculator.calculate(instant, observer)
+        val second = calculator.calculate(instant, observer)
+
+        assertEquals(first, second)
+        assertEquals(EclipseVisibility.TOTAL, first.visibility)
+    }
+
+    @Test
+    fun `UTC instant outside validity window fails explicitly`() {
+        val observer = Observer(42.5987, -5.5671, 837.0)
+
+        assertThrows(IllegalArgumentException::class.java) {
+            calculator.calculate(Instant.parse("2026-08-12T14:00:00Z"), observer)
+        }
+        assertThrows(IllegalArgumentException::class.java) {
+            calculator.calculate(Instant.parse("2026-08-12T22:00:00Z"), observer)
+        }
+    }
 
     @Test
     fun `centerline reference point produces ordered total-eclipse contacts`() {
