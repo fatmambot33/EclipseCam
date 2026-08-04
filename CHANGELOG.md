@@ -4,6 +4,18 @@ All notable changes to EclipseCam will be documented in this file.
 
 The format follows Keep a Changelog and Semantic Versioning.
 
+## [Unreleased]
+
+### Added
+- Permission-aware, local-only Android location repository
+- GPS provider, accuracy, altitude, capture time and staleness state
+- Mockable location flow connected to observer-to-centreline guidance
+- Graceful permission-denied, unavailable-provider and acquisition states
+
+### Validation still required
+- Android permission-transition instrumentation tests
+- Physical GPS and accuracy validation on the Pixel 7 Pro
+
 ## [0.0.1] - 2026-08-03
 
 ### Added
