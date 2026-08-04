@@ -27,9 +27,20 @@ class BesselianLocalCircumstancesCalculator(
     private val elements: BesselianElements = Eclipse2026Aug12.elements,
 ) : LocalCircumstancesCalculator {
 
-    override fun calculate(observer: Observer): LocalEclipseCircumstances {
+    /** Convenience entry point for the supported 12 August 2026 eclipse. */
+    fun calculate(observer: Observer): LocalEclipseCircumstances =
+        calculate(Eclipse2026Aug12.greatestEclipseUtc, observer)
+
+    override fun calculate(
+        instantUtc: Instant,
+        observer: Observer,
+    ): LocalEclipseCircumstances {
         val start = validWindowStartUtc()
         val end = validWindowEndUtc()
+        require(instantUtc >= start && instantUtc <= end) {
+            "UTC instant must lie inside the published Besselian-element validity window"
+        }
+
         val externalRoots = findRoots(start, end, observer) { geometry ->
             geometry.separation - geometry.penumbralRadius
         }
