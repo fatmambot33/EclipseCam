@@ -56,10 +56,11 @@ data class LocalEclipseCircumstances(
 /**
  * Calculates eclipse circumstances without network access.
  *
- * Implementations must return scientifically validated values or fail explicitly;
- * they must never silently substitute approximate path-table interpolation for
- * contact circumstances.
+ * [instantUtc] identifies the eclipse event and must lie inside the published
+ * Besselian-element validity window. Implementations must return scientifically
+ * validated values or fail explicitly; they must never silently substitute
+ * approximate path-table interpolation for contact circumstances.
  */
 fun interface LocalCircumstancesCalculator {
-    fun calculate(observer: Observer): LocalEclipseCircumstances
+    fun calculate(instantUtc: Instant, observer: Observer): LocalEclipseCircumstances
 }
