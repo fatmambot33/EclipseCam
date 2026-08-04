@@ -57,8 +57,7 @@ class AndroidOrientationRepository(
                         angularSpeedDegreesPerSecond = angularSpeedDegreesPerSecond(event.values)
                     }
                     Sensor.TYPE_ROTATION_VECTOR,
-                    Sensor.TYPE_GAME_ROTATION_VECTOR,
-                    -> {
+                    Sensor.TYPE_GAME_ROTATION_VECTOR -> {
                         val values = event.values
                         if (values.size < 3) return
                         trySend(
