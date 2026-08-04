@@ -93,13 +93,11 @@ jobs:
 
       - name: Verify required secrets
         env:
-          MAPS_API_KEY: ${{ secrets.MAPS_API_KEY }}
           STORE_PASSWORD: ${{ secrets.ECLIPSE_CAM_STORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.ECLIPSE_CAM_KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.ECLIPSE_CAM_KEY_PASSWORD }}
           PLAY_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
         run: |
-          test -n "$MAPS_API_KEY"
           test -n "$STORE_PASSWORD"
           test -n "$KEY_ALIAS"
           test -n "$KEY_PASSWORD"
@@ -107,7 +105,6 @@ jobs:
 
       - name: Test, lint and build signed bundle
         env:
-          MAPS_API_KEY: ${{ secrets.MAPS_API_KEY }}
           ECLIPSE_CAM_STORE_FILE: ${{ runner.temp }}/eclipsecam-signing/eclipsecam-upload.jks
           ECLIPSE_CAM_STORE_PASSWORD: ${{ secrets.ECLIPSE_CAM_STORE_PASSWORD }}
           ECLIPSE_CAM_KEY_ALIAS: ${{ secrets.ECLIPSE_CAM_KEY_ALIAS }}
