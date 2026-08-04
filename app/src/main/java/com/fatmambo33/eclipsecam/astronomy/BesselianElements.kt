@@ -56,21 +56,29 @@ data class Polynomial(
     fun evaluate(t: Double): Double = ((c3 * t + c2) * t + c1) * t + c0
 }
 
+/**
+ * Current NASA/GSFC Besselian element set for the 12 August 2026 total eclipse.
+ *
+ * Source: NASA Solar Eclipse Search Engine, dataset `20260812`, updated 2023-10-30.
+ * Eclipse predictions are by Fred Espenak, NASA's GSFC.
+ */
 object Eclipse2026Aug12 {
+    const val SOURCE_DATASET = "NASA-GSFC-SEdata-20260812-2023-10-30"
+
     val elements = BesselianElements(
         referenceTdtHour = 18.0,
-        deltaTSeconds = 71.4,
-        x = Polynomial(0.475593, 0.5189288, -0.0000773, -0.0000088),
-        y = Polynomial(0.771161, -0.2301664, -0.0001245, 0.0000037),
-        declinationDegrees = Polynomial(14.79667, -0.012065, -0.000003),
-        penumbralRadius = Polynomial(0.537954, 0.0000940, -0.0000121),
-        umbralRadius = Polynomial(-0.008142, 0.0000935, -0.0000121),
-        hourAngleDegrees = Polynomial(88.74776, 15.003093),
+        deltaTSeconds = 75.4,
+        x = Polynomial(0.4755140, 0.5189249, -0.0000773),
+        y = Polynomial(0.7711830, -0.2301680, -0.0001246),
+        declinationDegrees = Polynomial(14.7966700, -0.0120650, -0.0000030),
+        penumbralRadius = Polynomial(0.5379550, 0.0000939, -0.0000121),
+        umbralRadius = Polynomial(-0.0081420, 0.0000935, -0.0000121),
+        hourAngleDegrees = Polynomial(88.747787, 15.003090),
         tanF1 = 0.0046141,
         tanF2 = 0.0045911,
     )
 
-    val greatestEclipseUtc: Instant = Instant.parse("2026-08-12T17:45:53.8Z")
+    val greatestEclipseUtc: Instant = Instant.parse("2026-08-12T17:45:51Z")
 }
 
 private fun normalizeDegrees(value: Double): Double {

@@ -16,12 +16,18 @@ The format follows Keep a Changelog and Semantic Versioning.
 - Lifecycle-scoped Android orientation repository using rotation-vector and gyroscope sensors
 - Rotation-vector fallback and safe unavailable state when orientation sensors cannot be registered
 - Unit coverage for orientation normalization, landscape mapping, gyroscope motion and invalid samples
+- Scientific validation document with authoritative source, tolerance and release-gate status
+- Exact regression tests for the current NASA/GSFC 12 August 2026 Besselian dataset
+
+### Changed
+- Updated the embedded 12 August 2026 model from the older 2014 NASA element set to the current NASA/GSFC dataset using delta T 75.4 seconds and greatest eclipse at 17:45:51 UTC
 
 ### Validation still required
 - Android permission-transition instrumentation tests
 - Physical GPS and accuracy validation on the Pixel 7 Pro
 - Android orientation instrumentation tests
 - Physical orientation validation on the Pixel 7 Pro in portrait, landscape, flat, mounted and moving states
+- Independent high-precision local-circumstances and full path-edge validation
 
 ## [0.0.1] - 2026-08-03
 
