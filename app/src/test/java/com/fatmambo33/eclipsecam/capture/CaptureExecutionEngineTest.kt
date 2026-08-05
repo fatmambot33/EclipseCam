@@ -96,6 +96,72 @@ class CaptureExecutionEngineTest {
     }
 
     @Test
+    fun degradedHealthSkipsRoutinePartialCaptureWithoutCallingCamera() {
+        var calls = 0
+        val fixture = fixture {
+            calls += 1
+            CameraCaptureResult.Captured
+        }
+        val degraded = DeviceHealthDecision(
+            CaptureReadiness.DEGRADED,
+            setOf(DeviceHealthReason.BATTERY_MARGINAL, DeviceHealthReason.STORAGE_MARGINAL),
+        )
+
+        val result = fixture.engine.tick(start, degraded) as CaptureExecutionResult.SkippedDegraded
+
+        assertEquals(0, calls)
+        assertEquals(1, result.checkpoint.skippedCount)
+        assertEquals(1, result.checkpoint.nextInstructionIndex)
+        assertEquals(CaptureSessionStatus.RUNNING, result.checkpoint.status)
+        assertTrue(result.reason.contains("BATTERY_MARGINAL"))
+        assertTrue(result.reason.contains("STORAGE_MARGINAL"))
+        assertEquals(3, fixture.store.writes.size)
+    }
+
+    @Test
+    fun degradedHealthPreservesTotalityCapture() {
+        var calls = 0
+        val fixture = fixture {
+            calls += 1
+            CameraCaptureResult.Captured
+        }
+        val degraded = DeviceHealthDecision(
+            CaptureReadiness.DEGRADED,
+            setOf(DeviceHealthReason.THERMAL_ELEVATED),
+        )
+
+        fixture.engine.tick(start, degraded)
+        val result = fixture.engine.tick(start.plusSeconds(1), degraded) as CaptureExecutionResult.Captured
+
+        assertEquals(1, calls)
+        assertEquals(1, result.checkpoint.capturedCount)
+        assertEquals(1, result.checkpoint.skippedCount)
+        assertEquals(CaptureSessionStatus.COMPLETED, result.checkpoint.status)
+    }
+
+    @Test
+    fun customDegradedPolicyCanPreserveRoutineCapture() {
+        var calls = 0
+        val fixture = fixture(
+            executor = CaptureInstructionExecutor {
+                calls += 1
+                CameraCaptureResult.Captured
+            },
+            degradedCapturePolicy = DegradedCapturePolicy { _, _ -> true },
+        )
+        val degraded = DeviceHealthDecision(
+            CaptureReadiness.DEGRADED,
+            setOf(DeviceHealthReason.BATTERY_MARGINAL),
+        )
+
+        val result = fixture.engine.tick(start, degraded) as CaptureExecutionResult.Captured
+
+        assertEquals(1, calls)
+        assertEquals(1, result.checkpoint.capturedCount)
+        assertEquals(0, result.checkpoint.skippedCount)
+    }
+
+    @Test
     fun blockingHealthPausesBeforeCameraExecution() {
         var calls = 0
         val fixture = fixture {
@@ -144,7 +210,10 @@ class CaptureExecutionEngineTest {
 
     private fun fixture(result: CameraCaptureResult): Fixture = fixture { result }
 
-    private fun fixture(executor: CaptureInstructionExecutor): Fixture {
+    private fun fixture(
+        executor: CaptureInstructionExecutor,
+        degradedCapturePolicy: DegradedCapturePolicy = DegradedCapturePolicy.PreserveCriticalPhases,
+    ): Fixture {
         val store = RecordingStore()
         val coordinator = CaptureSessionCoordinator.arm(
             sessionId = "session",
@@ -161,6 +230,7 @@ class CaptureExecutionEngineTest {
                 coordinator = coordinator,
                 executor = executor,
                 maximumLateness = Duration.ofSeconds(10),
+                degradedCapturePolicy = degradedCapturePolicy,
             ),
         )
     }
