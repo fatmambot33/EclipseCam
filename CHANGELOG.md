@@ -34,6 +34,8 @@ The format follows Keep a Changelog and Semantic Versioning.
 - Recovery validation that rejects mismatched plans, invalid indexes and inconsistent counters
 - Non-exported camera foreground service with a persistent notification and explicit pause, resume and stop actions
 - Deterministic foreground-service lifecycle reducer with JVM regression coverage
+- Versioned local capture-checkpoint codec with strict corrupt-data rejection
+- Atomic file-backed checkpoint persistence with overwrite, clear, missing, and corruption coverage
 
 ### Changed
 - Updated the embedded 12 August 2026 model from the older 2014 NASA element set to the current NASA/GSFC dataset using delta T 75.4 seconds and greatest eclipse at 17:45:51 UTC
