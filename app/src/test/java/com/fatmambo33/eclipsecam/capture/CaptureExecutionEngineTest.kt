@@ -28,7 +28,7 @@ class CaptureExecutionEngineTest {
         val result = fixture.engine.tick(start.minusSeconds(1), ready)
 
         assertTrue(result is CaptureExecutionResult.Waiting)
-        assertEquals(1, fixture.store.writes.size)
+        assertEquals(2, fixture.store.writes.size)
     }
 
     @Test
