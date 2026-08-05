@@ -25,6 +25,9 @@ The format follows Keep a Changelog and Semantic Versioning.
 - Explicit preview startup, streaming, permission and unavailable states with JVM regression coverage
 - Local battery, charging, thermal-pressure and available-storage snapshot reader
 - Deterministic ready, degraded and blocked capture safeguard policy with boundary tests
+- Deterministic east-north-up world-to-screen projection for Sun and eclipse contact markers
+- Lens field-of-view framing assessment, roll mapping, fit confidence and simple directional guidance
+- AR projection validation documentation and JVM coverage for portrait, landscape, clipping, behind-camera and low-confidence cases
 
 ### Changed
 - Updated the embedded 12 August 2026 model from the older 2014 NASA element set to the current NASA/GSFC dataset using delta T 75.4 seconds and greatest eclipse at 17:45:51 UTC
@@ -39,6 +42,7 @@ The format follows Keep a Changelog and Semantic Versioning.
 - Independent high-precision local-circumstances and full path-edge validation
 - CameraX preview lifecycle instrumentation, orientation-change testing and physical validation of every Pixel 7 Pro rear lens
 - Long-session battery drain, charging, storage exhaustion and real thermal-throttling validation on the Pixel 7 Pro
+- AR overlay screenshot tests and outdoor Pixel 7 Pro alignment validation against known Sun positions
 
 ## [0.0.1] - 2026-08-03
 
