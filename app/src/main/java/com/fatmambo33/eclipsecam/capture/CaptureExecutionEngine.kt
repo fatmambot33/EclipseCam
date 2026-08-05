@@ -15,12 +15,27 @@ fun interface CaptureInstructionExecutor {
     fun capture(instruction: CaptureInstruction): CameraCaptureResult
 }
 
+fun interface DegradedCapturePolicy {
+    fun shouldCapture(instruction: CaptureInstruction, health: DeviceHealthDecision): Boolean
+
+    companion object {
+        /** Preserve scarce contact and totality frames while shedding routine partial-phase work. */
+        val PreserveCriticalPhases = DegradedCapturePolicy { instruction, _ ->
+            instruction.phase != CapturePhase.PARTIAL
+        }
+    }
+}
+
 sealed interface CaptureExecutionResult {
     data class Waiting(val nextInstructionAtUtc: Instant) : CaptureExecutionResult
     data class Captured(val checkpoint: CaptureSessionCheckpoint) : CaptureExecutionResult
     data class SkippedLate(
         val checkpoint: CaptureSessionCheckpoint,
         val skippedInstructionCount: Int,
+    ) : CaptureExecutionResult
+    data class SkippedDegraded(
+        val checkpoint: CaptureSessionCheckpoint,
+        val reason: String,
     ) : CaptureExecutionResult
     data class Paused(val checkpoint: CaptureSessionCheckpoint, val reason: String) : CaptureExecutionResult
     data class Failed(val checkpoint: CaptureSessionCheckpoint, val reason: String) : CaptureExecutionResult
@@ -33,13 +48,16 @@ sealed interface CaptureExecutionResult {
  *
  * Consecutive instructions beyond [maximumLateness] are skipped as one atomic checkpoint update so
  * process suspension cannot leave the service replaying a stale backlog while the eclipse moves on.
- * The engine is framework-neutral and every state mutation is persisted before returning.
+ * Degraded device health sheds routine partial-phase captures by default while preserving contact
+ * bursts and totality. Blocking health always pauses before camera access. Every state mutation is
+ * persisted before returning.
  */
 class CaptureExecutionEngine(
     private val plan: CapturePlan,
     private val coordinator: CaptureSessionCoordinator,
     private val executor: CaptureInstructionExecutor,
     private val maximumLateness: Duration = Duration.ofSeconds(10),
+    private val degradedCapturePolicy: DegradedCapturePolicy = DegradedCapturePolicy.PreserveCriticalPhases,
 ) {
     init {
         require(!maximumLateness.isNegative)
@@ -79,6 +97,17 @@ class CaptureExecutionEngine(
             return CaptureExecutionResult.SkippedLate(
                 checkpoint = coordinator.skip(lateCount, nowUtc),
                 skippedInstructionCount = lateCount,
+            )
+        }
+
+        if (
+            health.readiness == CaptureReadiness.DEGRADED &&
+            !degradedCapturePolicy.shouldCapture(instruction, health)
+        ) {
+            val reason = "Routine capture skipped to protect device resources: ${health.reasons.sortedBy { it.name }.joinToString()}"
+            return CaptureExecutionResult.SkippedDegraded(
+                checkpoint = coordinator.skip(1, nowUtc),
+                reason = reason,
             )
         }
 
