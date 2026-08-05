@@ -28,6 +28,8 @@ The format follows Keep a Changelog and Semantic Versioning.
 - Deterministic east-north-up world-to-screen projection for Sun and eclipse contact markers
 - Lens field-of-view framing assessment, roll mapping, fit confidence and simple directional guidance
 - AR projection validation documentation and JVM coverage for portrait, landscape, clipping, behind-camera and low-confidence cases
+- Bounded phase-sensitive capture plan derived from validated C1/C2/MAX/C3/C4 contacts
+- Conservative arming gate for model validity, orientation stability, framing, solar-filter acknowledgement and device health
 
 ### Changed
 - Updated the embedded 12 August 2026 model from the older 2014 NASA element set to the current NASA/GSFC dataset using delta T 75.4 seconds and greatest eclipse at 17:45:51 UTC
@@ -43,6 +45,7 @@ The format follows Keep a Changelog and Semantic Versioning.
 - CameraX preview lifecycle instrumentation, orientation-change testing and physical validation of every Pixel 7 Pro rear lens
 - Long-session battery drain, charging, storage exhaustion and real thermal-throttling validation on the Pixel 7 Pro
 - AR overlay screenshot tests and outdoor Pixel 7 Pro alignment validation against known Sun positions
+- Foreground capture service lifecycle, screen-off recovery and long-duration Pixel 7 Pro validation
 
 ## [0.0.1] - 2026-08-03
 
