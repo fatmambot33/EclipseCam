@@ -73,8 +73,20 @@ class CaptureServiceOrchestrator(
             is CaptureExecutionResult.Finished,
             -> CaptureServiceState.STOPPED
 
-            is CaptureExecutionResult.Captured,
-            is CaptureExecutionResult.SkippedLate,
+            is CaptureExecutionResult.Captured ->
+                if (result.checkpoint.status == CaptureSessionStatus.COMPLETED) {
+                    CaptureServiceState.STOPPED
+                } else {
+                    state
+                }
+
+            is CaptureExecutionResult.SkippedLate ->
+                if (result.checkpoint.status == CaptureSessionStatus.COMPLETED) {
+                    CaptureServiceState.STOPPED
+                } else {
+                    state
+                }
+
             is CaptureExecutionResult.Waiting,
             is CaptureExecutionResult.Inactive,
             -> state
