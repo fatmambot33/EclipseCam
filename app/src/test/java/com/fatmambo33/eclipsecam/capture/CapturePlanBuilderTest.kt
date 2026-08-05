@@ -19,15 +19,15 @@ class CapturePlanBuilderTest {
     private val c4 = Instant.parse("2026-08-12T19:00:00Z")
 
     @Test
-    fun totalEclipseUsesFastestCadenceDuringTotality() {
+    fun totalEclipseUsesFastestCadenceInsideTotality() {
         val result = CapturePlanBuilder().build(circumstances(EclipseVisibility.TOTAL)) as CapturePlanResult.Ready
 
         val totality = result.plan.instructions.filter { it.phase == CapturePhase.TOTALITY }
-        assertTrue(totality.size >= 120)
-        assertEquals(c2, totality.first().instantUtc)
-        assertEquals(c3, totality.last().instantUtc)
+        assertEquals(c2.plusSeconds(1), totality.first().instantUtc)
+        assertEquals(c3.minusSeconds(1), totality.last().instantUtc)
         assertTrue(totality.zipWithNext().all { (a, b) -> b.instantUtc.epochSecond - a.instantUtc.epochSecond == 1L })
         assertEquals(ExposureStrategy.TOTALITY_BRACKET, totality.first().exposureStrategy)
+        assertEquals(ExposureStrategy.TOTALITY_BRACKET, instructionAt(result.plan, maximum).exposureStrategy)
     }
 
     @Test
@@ -43,13 +43,15 @@ class CapturePlanBuilderTest {
     }
 
     @Test
-    fun exactContactsAreAlwaysPresentWithoutDuplicates() {
+    fun exactContactsUseContactBracketsWithoutDuplicates() {
         val result = CapturePlanBuilder().build(circumstances(EclipseVisibility.TOTAL)) as CapturePlanResult.Ready
         val instants = result.plan.instructions.map(CaptureInstruction::instantUtc)
 
-        assertTrue(c1 in instants)
-        assertTrue(maximum in instants)
-        assertTrue(c4 in instants)
+        listOf(c1, c2, c3, c4).forEach { contact ->
+            val instruction = instructionAt(result.plan, contact)
+            assertEquals(CapturePhase.CONTACT_BURST, instruction.phase)
+            assertEquals(ExposureStrategy.CONTACT_BRACKET, instruction.exposureStrategy)
+        }
         assertEquals(instants.distinct().size, instants.size)
     }
 
@@ -68,6 +70,9 @@ class CapturePlanBuilderTest {
 
         assertTrue(result is CapturePlanResult.Unavailable)
     }
+
+    private fun instructionAt(plan: CapturePlan, instant: Instant): CaptureInstruction =
+        requireNotNull(plan.instructions.firstOrNull { it.instantUtc == instant })
 
     private fun circumstances(
         visibility: EclipseVisibility,
