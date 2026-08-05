@@ -49,17 +49,17 @@ class ProjectionEngineTest {
     @Test
     fun appliesPhoneRollToScreenCoordinates() {
         val unrolled = ProjectionEngine.project(
-            direction = SkyDirection(190.0, 20.0),
-            camera = camera(azimuth = 180.0, elevation = 20.0, roll = 0.0),
+            direction = SkyDirection(190.0, 0.0),
+            camera = camera(azimuth = 180.0, elevation = 0.0, roll = 0.0),
         ) as ProjectionResult.Visible
         val rolled = ProjectionEngine.project(
-            direction = SkyDirection(190.0, 20.0),
-            camera = camera(azimuth = 180.0, elevation = 20.0, roll = 90.0),
+            direction = SkyDirection(190.0, 0.0),
+            camera = camera(azimuth = 180.0, elevation = 0.0, roll = 90.0),
         ) as ProjectionResult.Visible
 
         assertTrue(unrolled.point.xPixels > 500.0)
-        assertEquals(250.0, unrolled.point.yPixels, 0.5)
-        assertEquals(500.0, rolled.point.xPixels, 0.5)
+        assertEquals(250.0, unrolled.point.yPixels, 1e-6)
+        assertEquals(500.0, rolled.point.xPixels, 1e-6)
         assertTrue(rolled.point.yPixels > 250.0)
     }
 
