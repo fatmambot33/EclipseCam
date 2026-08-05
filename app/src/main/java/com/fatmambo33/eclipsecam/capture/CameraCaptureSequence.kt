@@ -30,7 +30,7 @@ data class CameraCaptureSequence(
  * fails, all files already reserved for the sequence are released before the error is propagated.
  */
 class CameraCaptureSequencePlanner(
-    private val outputStore: CaptureOutputStore,
+    private val outputAllocator: CaptureOutputAllocator,
 ) {
     fun plan(
         sessionId: String,
@@ -48,17 +48,17 @@ class CameraCaptureSequencePlanner(
         val reserved = mutableListOf<CaptureOutput>()
         return try {
             val frames = exposures.mapIndexed { ordinal, exposure ->
-                val output = outputStore.reserve(sessionId, instructionIndex, capturedAtUtc)
+                val output = outputAllocator.reserve(sessionId, instructionIndex, capturedAtUtc)
                 reserved += output
                 CameraCaptureFrame(ordinal, exposure, output)
             }
             CameraCaptureSequence(request, frames)
         } catch (error: RuntimeException) {
-            reserved.forEach(outputStore::release)
+            reserved.forEach(outputAllocator::release)
             throw error
         }
     }
 
     fun release(sequence: CameraCaptureSequence): Boolean =
-        sequence.frames.map { outputStore.release(it.output) }.all { it }
+        sequence.frames.map { outputAllocator.release(it.output) }.all { it }
 }
