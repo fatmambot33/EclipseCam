@@ -2,6 +2,8 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CAMERA" />
     <uses-permission android:name="android.permission.INTERNET" />
 
     <uses-feature android:name="android.hardware.location.gps" android:required="false" />
@@ -17,6 +19,12 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.EclipseCam"
         android:usesCleartextTraffic="false">
+
+        <service
+            android:name=".capture.CaptureForegroundService"
+            android:exported="false"
+            android:foregroundServiceType="camera"
+            android:stopWithTask="false" />
 
         <activity
             android:name=".MainActivity"

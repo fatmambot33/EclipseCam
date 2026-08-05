@@ -1,0 +1,10 @@
+<resources>
+    <string name="capture_notification_channel_name">Eclipse capture</string>
+    <string name="capture_notification_channel_description">Keeps an armed eclipse capture session visible and controllable.</string>
+    <string name="capture_notification_title">Eclipse capture armed</string>
+    <string name="capture_notification_running">Capture session is running.</string>
+    <string name="capture_notification_paused">Capture session is paused.</string>
+    <string name="capture_notification_pause">Pause</string>
+    <string name="capture_notification_resume">Resume</string>
+    <string name="capture_notification_stop">Stop</string>
+</resources>
