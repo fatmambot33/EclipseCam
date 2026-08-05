@@ -36,6 +36,8 @@ The format follows Keep a Changelog and Semantic Versioning.
 - Deterministic foreground-service lifecycle reducer with JVM regression coverage
 - Versioned local capture-checkpoint codec with strict corrupt-data rejection
 - Atomic file-backed checkpoint persistence with overwrite, clear, missing, and corruption coverage
+- Capture-session coordinator that atomically persists arming, progress, pause, resume, completion, and failure transitions
+- Deterministic restoration that rejects corrupt or plan-incompatible local session state before execution
 
 ### Changed
 - Updated the embedded 12 August 2026 model from the older 2014 NASA element set to the current NASA/GSFC dataset using delta T 75.4 seconds and greatest eclipse at 17:45:51 UTC
