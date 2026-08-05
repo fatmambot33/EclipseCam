@@ -1,6 +1,9 @@
 package com.fatmambo33.eclipsecam.capture
 
 import java.io.File
+import java.nio.file.AtomicMoveNotSupportedException
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
 import java.time.Instant
 import java.util.Base64
 
@@ -81,12 +84,27 @@ class FileCaptureCheckpointStore(
     private val checkpointFile: File,
 ) : CaptureCheckpointStore {
     override fun write(checkpoint: CaptureSessionCheckpoint) {
-        checkpointFile.parentFile?.mkdirs()
-        val temporaryFile = File(checkpointFile.parentFile, "${checkpointFile.name}.tmp")
+        val parent = checkpointFile.absoluteFile.parentFile
+            ?: throw IllegalStateException("Capture checkpoint has no parent directory.")
+        check(parent.exists() || parent.mkdirs()) { "Unable to create capture checkpoint directory." }
+
+        val temporaryFile = File(parent, "${checkpointFile.name}.tmp")
         temporaryFile.writeText(CaptureCheckpointCodec.encode(checkpoint), Charsets.UTF_8)
-        if (!temporaryFile.renameTo(checkpointFile)) {
+        try {
+            Files.move(
+                temporaryFile.toPath(),
+                checkpointFile.toPath(),
+                StandardCopyOption.ATOMIC_MOVE,
+                StandardCopyOption.REPLACE_EXISTING,
+            )
+        } catch (_: AtomicMoveNotSupportedException) {
+            Files.move(
+                temporaryFile.toPath(),
+                checkpointFile.toPath(),
+                StandardCopyOption.REPLACE_EXISTING,
+            )
+        } finally {
             temporaryFile.delete()
-            throw IllegalStateException("Unable to atomically persist capture checkpoint.")
         }
     }
 
