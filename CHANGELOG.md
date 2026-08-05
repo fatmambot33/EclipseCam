@@ -48,6 +48,8 @@ The format follows Keep a Changelog and Semantic Versioning.
 - Atomic file-backed capture-plan persistence for process-recreation recovery
 - Foreground-service recovery bootstrap backed by the validated durable plan/checkpoint bundle
 - Fail-closed sticky restart behavior that restores active sessions paused until explicit resume
+- Durable foreground-service pause, resume, and stop command synchronization
+- Process-recovery normalization that persists previously running sessions as paused
 
 ### Changed
 - Updated the embedded 12 August 2026 model from the older 2014 NASA element set to the current NASA/GSFC dataset using delta T 75.4 seconds and greatest eclipse at 17:45:51 UTC

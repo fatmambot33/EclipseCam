@@ -13,43 +13,51 @@ import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.fatmambo33.eclipsecam.MainActivity
 import com.fatmambo33.eclipsecam.R
+import java.time.Instant
 
 class CaptureForegroundService : Service() {
     private var state = CaptureServiceState.IDLE
-    private var recoveryReady = false
+    private var commandController: CaptureServiceCommandController? = null
 
     override fun onCreate() {
         super.onCreate()
         createNotificationChannel()
         when (val recovery = CaptureServiceRecoveryBootstrap.fromFilesDirectory(filesDir).load()) {
             is CaptureServiceBootstrapResult.Ready -> {
-                state = recovery.initialState
-                recoveryReady = true
+                commandController = CaptureServiceCommandController(
+                    coordinator = recovery.coordinator,
+                    initialState = recovery.initialState,
+                ).also { controller ->
+                    controller.normalizeRecoveredSession(Instant.now())
+                    state = controller.state
+                }
             }
 
             CaptureServiceBootstrapResult.Missing,
             is CaptureServiceBootstrapResult.Rejected,
             -> {
                 state = CaptureServiceState.IDLE
-                recoveryReady = false
+                commandController = null
             }
         }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        val controller = commandController
         if (intent?.action == ACTION_STOP) {
+            controller?.command(CaptureServiceCommand.STOP, Instant.now())
             stopCaptureService()
             return START_NOT_STICKY
         }
-        if (!recoveryReady) {
+        if (controller == null) {
             stopSelf()
             return START_NOT_STICKY
         }
 
-        // A sticky restart has no explicit user command. Keep a recovered session paused until the
-        // user deliberately resumes it rather than silently restarting camera work.
+        // A sticky restart has no explicit user command. Recovery normalization has already persisted
+        // a paused checkpoint, so camera work cannot restart silently after process recreation.
         if (intent == null) {
-            state = CaptureServiceState.PAUSED
+            state = controller.state
             startForeground(NOTIFICATION_ID, buildNotification(state))
             return START_STICKY
         }
@@ -58,7 +66,8 @@ class CaptureForegroundService : Service() {
             ACTION_PAUSE -> CaptureServiceCommand.PAUSE
             else -> CaptureServiceCommand.START
         }
-        state = CaptureServiceStateReducer.reduce(state, command)
+        controller.command(command, Instant.now())
+        state = controller.state
         when (state) {
             CaptureServiceState.RUNNING,
             CaptureServiceState.PAUSED -> startForeground(NOTIFICATION_ID, buildNotification(state))
