@@ -21,10 +21,13 @@ The format follows Keep a Changelog and Semantic Versioning.
 - Explicit solver diagnostics for converged, no-eclipse and failed numerical outcomes
 - Deterministic camera capability mapping for lens facing, orientation, zoom, JPEG sizes, RAW, manual exposure, focus and exposure compensation
 - JVM regression coverage for complete, missing and invalid camera hardware metadata
+- Lifecycle-bound CameraX preview on the Camera surface with back-camera preference and front-camera fallback
+- Explicit preview startup, streaming, permission and unavailable states with JVM regression coverage
 
 ### Changed
 - Updated the embedded 12 August 2026 model from the older 2014 NASA element set to the current NASA/GSFC dataset using delta T 75.4 seconds and greatest eclipse at 17:45:51 UTC
 - Replaced Android `Size` values in the camera capability contract with stable framework-neutral output dimensions
+- Updated the Camera surface to show honest live-preview state instead of a disabled placeholder
 
 ### Validation still required
 - Android permission-transition instrumentation tests
@@ -32,7 +35,7 @@ The format follows Keep a Changelog and Semantic Versioning.
 - Android orientation instrumentation tests
 - Physical orientation validation on the Pixel 7 Pro in portrait, landscape, flat, mounted and moving states
 - Independent high-precision local-circumstances and full path-edge validation
-- CameraX preview lifecycle instrumentation and physical validation of every Pixel 7 Pro rear lens
+- CameraX preview lifecycle instrumentation, orientation-change testing and physical validation of every Pixel 7 Pro rear lens
 
 ## [0.0.1] - 2026-08-03
 
