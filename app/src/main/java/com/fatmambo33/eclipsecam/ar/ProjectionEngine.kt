@@ -7,6 +7,8 @@ import kotlin.math.max
 import kotlin.math.sin
 import kotlin.math.tan
 
+private const val VIEWPORT_BOUNDARY_EPSILON = 1e-9
+
 data class SkyDirection(
     val azimuthDegrees: Double,
     val elevationDegrees: Double,
@@ -108,7 +110,8 @@ object ProjectionEngine {
             ScreenPoint(
                 xPixels = xPixels,
                 yPixels = yPixels,
-                insideViewport = abs(xNormalized) <= 1.0 && abs(yNormalized) <= 1.0,
+                insideViewport = abs(xNormalized) <= 1.0 + VIEWPORT_BOUNDARY_EPSILON &&
+                    abs(yNormalized) <= 1.0 + VIEWPORT_BOUNDARY_EPSILON,
             ),
         )
     }
