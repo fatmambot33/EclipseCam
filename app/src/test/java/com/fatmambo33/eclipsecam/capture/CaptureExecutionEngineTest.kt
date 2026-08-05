@@ -24,9 +24,7 @@ class CaptureExecutionEngineTest {
     @Test
     fun waitsWithoutMutatingBeforeInstructionIsDue() {
         val fixture = fixture(CameraCaptureResult.Captured)
-
         val result = fixture.engine.tick(start.minusSeconds(1), ready)
-
         assertTrue(result is CaptureExecutionResult.Waiting)
         assertEquals(2, fixture.store.writes.size)
     }
@@ -34,9 +32,7 @@ class CaptureExecutionEngineTest {
     @Test
     fun capturesOneInstructionAndPersistsProgress() {
         val fixture = fixture(CameraCaptureResult.Captured)
-
         val result = fixture.engine.tick(start, ready) as CaptureExecutionResult.Captured
-
         assertEquals(1, result.checkpoint.capturedCount)
         assertEquals(1, result.checkpoint.nextInstructionIndex)
         assertEquals(3, fixture.store.writes.size)
@@ -45,13 +41,11 @@ class CaptureExecutionEngineTest {
     @Test
     fun lateInstructionIsSkippedWithoutCallingCamera() {
         var calls = 0
-        val fixture = fixture {
+        val fixture = fixtureWithExecutor {
             calls += 1
             CameraCaptureResult.Captured
         }
-
         val result = fixture.engine.tick(start.plusSeconds(11), ready) as CaptureExecutionResult.SkippedLate
-
         assertEquals(0, calls)
         assertEquals(1, result.skippedInstructionCount)
         assertEquals(1, result.checkpoint.skippedCount)
@@ -63,13 +57,11 @@ class CaptureExecutionEngineTest {
     @Test
     fun allIrrecoverablyLateInstructionsAreSkippedAtomically() {
         var calls = 0
-        val fixture = fixture {
+        val fixture = fixtureWithExecutor {
             calls += 1
             CameraCaptureResult.Captured
         }
-
         val result = fixture.engine.tick(start.plusSeconds(12), ready) as CaptureExecutionResult.SkippedLate
-
         assertEquals(0, calls)
         assertEquals(2, result.skippedInstructionCount)
         assertEquals(2, result.checkpoint.skippedCount)
@@ -81,14 +73,12 @@ class CaptureExecutionEngineTest {
     @Test
     fun latenessToleranceBoundaryRemainsEligibleForCapture() {
         var calls = 0
-        val fixture = fixture {
+        val fixture = fixtureWithExecutor {
             calls += 1
             CameraCaptureResult.Captured
         }
-
         val skipped = fixture.engine.tick(start.plusSeconds(11), ready) as CaptureExecutionResult.SkippedLate
         val captured = fixture.engine.tick(start.plusSeconds(11), ready) as CaptureExecutionResult.Captured
-
         assertEquals(1, skipped.skippedInstructionCount)
         assertEquals(1, calls)
         assertEquals(1, captured.checkpoint.capturedCount)
@@ -98,7 +88,7 @@ class CaptureExecutionEngineTest {
     @Test
     fun degradedHealthSkipsRoutinePartialCaptureWithoutCallingCamera() {
         var calls = 0
-        val fixture = fixture {
+        val fixture = fixtureWithExecutor {
             calls += 1
             CameraCaptureResult.Captured
         }
@@ -106,9 +96,7 @@ class CaptureExecutionEngineTest {
             CaptureReadiness.DEGRADED,
             setOf(DeviceHealthReason.BATTERY_MARGINAL, DeviceHealthReason.STORAGE_MARGINAL),
         )
-
         val result = fixture.engine.tick(start, degraded) as CaptureExecutionResult.SkippedDegraded
-
         assertEquals(0, calls)
         assertEquals(1, result.checkpoint.skippedCount)
         assertEquals(1, result.checkpoint.nextInstructionIndex)
@@ -121,7 +109,7 @@ class CaptureExecutionEngineTest {
     @Test
     fun degradedHealthPreservesTotalityCapture() {
         var calls = 0
-        val fixture = fixture {
+        val fixture = fixtureWithExecutor {
             calls += 1
             CameraCaptureResult.Captured
         }
@@ -129,10 +117,8 @@ class CaptureExecutionEngineTest {
             CaptureReadiness.DEGRADED,
             setOf(DeviceHealthReason.THERMAL_ELEVATED),
         )
-
         fixture.engine.tick(start, degraded)
         val result = fixture.engine.tick(start.plusSeconds(1), degraded) as CaptureExecutionResult.Captured
-
         assertEquals(1, calls)
         assertEquals(1, result.checkpoint.capturedCount)
         assertEquals(1, result.checkpoint.skippedCount)
@@ -142,7 +128,7 @@ class CaptureExecutionEngineTest {
     @Test
     fun customDegradedPolicyCanPreserveRoutineCapture() {
         var calls = 0
-        val fixture = fixture(
+        val fixture = fixtureWithExecutor(
             executor = CaptureInstructionExecutor {
                 calls += 1
                 CameraCaptureResult.Captured
@@ -153,9 +139,7 @@ class CaptureExecutionEngineTest {
             CaptureReadiness.DEGRADED,
             setOf(DeviceHealthReason.BATTERY_MARGINAL),
         )
-
         val result = fixture.engine.tick(start, degraded) as CaptureExecutionResult.Captured
-
         assertEquals(1, calls)
         assertEquals(1, result.checkpoint.capturedCount)
         assertEquals(0, result.checkpoint.skippedCount)
@@ -164,7 +148,7 @@ class CaptureExecutionEngineTest {
     @Test
     fun blockingHealthPausesBeforeCameraExecution() {
         var calls = 0
-        val fixture = fixture {
+        val fixture = fixtureWithExecutor {
             calls += 1
             CameraCaptureResult.Captured
         }
@@ -172,9 +156,7 @@ class CaptureExecutionEngineTest {
             CaptureReadiness.BLOCKED,
             setOf(DeviceHealthReason.THERMAL_UNSAFE),
         )
-
         val result = fixture.engine.tick(start, blocked) as CaptureExecutionResult.Paused
-
         assertEquals(0, calls)
         assertEquals(CaptureSessionStatus.PAUSED, result.checkpoint.status)
         assertTrue(result.reason.contains("THERMAL_UNSAFE"))
@@ -185,7 +167,6 @@ class CaptureExecutionEngineTest {
         val recoverable = fixture(CameraCaptureResult.RecoverableError("Camera busy"))
         val paused = recoverable.engine.tick(start, ready) as CaptureExecutionResult.Paused
         assertEquals(CaptureSessionStatus.PAUSED, paused.checkpoint.status)
-
         val fatal = fixture(CameraCaptureResult.FatalError("Camera disconnected"))
         val failed = fatal.engine.tick(start, ready) as CaptureExecutionResult.Failed
         assertEquals(CaptureSessionStatus.FAILED, failed.checkpoint.status)
@@ -195,22 +176,21 @@ class CaptureExecutionEngineTest {
     @Test
     fun completedSessionReturnsFinishedWithoutCameraCall() {
         var calls = 0
-        val fixture = fixture {
+        val fixture = fixtureWithExecutor {
             calls += 1
             CameraCaptureResult.Captured
         }
         fixture.engine.tick(start, ready)
         fixture.engine.tick(start.plusSeconds(1), ready)
-
         val result = fixture.engine.tick(start.plusSeconds(2), ready)
-
         assertTrue(result is CaptureExecutionResult.Finished)
         assertEquals(2, calls)
     }
 
-    private fun fixture(result: CameraCaptureResult): Fixture = fixture { result }
+    private fun fixture(result: CameraCaptureResult): Fixture =
+        fixtureWithExecutor(CaptureInstructionExecutor { result })
 
-    private fun fixture(
+    private fun fixtureWithExecutor(
         executor: CaptureInstructionExecutor,
         degradedCapturePolicy: DegradedCapturePolicy = DegradedCapturePolicy.PreserveCriticalPhases,
     ): Fixture {
