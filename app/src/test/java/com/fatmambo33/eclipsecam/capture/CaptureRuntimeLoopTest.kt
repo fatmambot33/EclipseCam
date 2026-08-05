@@ -73,7 +73,7 @@ class CaptureRuntimeLoopTest {
             instructions = listOf(
                 CaptureInstruction(
                     instantUtc = instructionAt,
-                    phase = CapturePhase.MAXIMUM,
+                    phase = CapturePhase.TOTALITY,
                     exposureStrategy = ExposureStrategy.TOTALITY_BRACKET,
                 ),
             ),
