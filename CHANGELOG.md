@@ -46,6 +46,8 @@ The format follows Keep a Changelog and Semantic Versioning.
 - Recoverable stop behavior that persists a paused checkpoint instead of discarding an active session
 - Versioned capture-plan codec with strict instruction and chronology validation
 - Atomic file-backed capture-plan persistence for process-recreation recovery
+- Foreground-service recovery bootstrap backed by the validated durable plan/checkpoint bundle
+- Fail-closed sticky restart behavior that restores active sessions paused until explicit resume
 
 ### Changed
 - Updated the embedded 12 August 2026 model from the older 2014 NASA element set to the current NASA/GSFC dataset using delta T 75.4 seconds and greatest eclipse at 17:45:51 UTC
