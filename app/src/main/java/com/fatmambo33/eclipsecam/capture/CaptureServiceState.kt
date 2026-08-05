@@ -11,8 +11,7 @@ object CaptureServiceStateReducer {
     ): CaptureServiceState = when (command) {
         CaptureServiceCommand.START -> when (current) {
             CaptureServiceState.IDLE,
-            CaptureServiceState.PAUSED,
-            -> CaptureServiceState.RUNNING
+            CaptureServiceState.PAUSED -> CaptureServiceState.RUNNING
 
             CaptureServiceState.RUNNING -> CaptureServiceState.RUNNING
             CaptureServiceState.STOPPED -> CaptureServiceState.STOPPED
