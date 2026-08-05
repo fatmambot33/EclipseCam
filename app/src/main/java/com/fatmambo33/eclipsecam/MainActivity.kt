@@ -50,6 +50,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.fatmambo33.eclipsecam.camera.preview.CameraPreview
 import kotlinx.coroutines.delay
 import java.time.Duration
 import java.time.Instant
@@ -70,9 +71,7 @@ class MainActivity : ComponentActivity() {
                     background = EclipseBackground,
                     surface = EclipseCard,
                 ),
-            ) {
-                EclipseCamApp()
-            }
+            ) { EclipseCamApp() }
         }
     }
 }
@@ -120,27 +119,35 @@ private fun EclipseCamApp() {
 private fun CameraScreen() {
     val context = LocalContext.current
     var cameraGranted by remember {
-        mutableStateOf(context.checkSelfPermission(Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED)
+        mutableStateOf(
+            context.checkSelfPermission(Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED,
+        )
     }
+    var previewError by remember { mutableStateOf<String?>(null) }
     val cameraPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
         cameraGranted = it
+        previewError = null
     }
 
     ScreenColumn("Prepare your phone") {
         HeroCard(
-            if (cameraGranted) "Camera ready" else "Camera access needed",
-            if (cameraGranted) {
-                "Mount the phone securely. Eclipse trajectory guidance will appear here as the scientific engine is validated."
-            } else {
-                "EclipseCam needs camera access for alignment guidance and automatic capture."
+            if (cameraGranted) "Live camera ready" else "Camera access needed",
+            when {
+                !cameraGranted -> "EclipseCam needs camera access for alignment guidance and automatic capture."
+                previewError != null -> "The camera could not start: $previewError"
+                else -> "Mount the phone securely and confirm the complete eclipse trajectory stays in frame."
             },
-            if (cameraGranted) EclipseReady else EclipseWarning,
+            if (cameraGranted && previewError == null) EclipseReady else EclipseWarning,
         )
         Spacer(Modifier.height(16.dp))
-        ReadinessRow("Camera", cameraGranted, if (cameraGranted) "Available" else "Permission required")
+        if (cameraGranted) {
+            CameraPreview(onError = { previewError = it.message ?: it::class.java.simpleName })
+            Spacer(Modifier.height(16.dp))
+        }
+        ReadinessRow("Camera", cameraGranted && previewError == null, if (cameraGranted) "CameraX preview" else "Permission required")
         ReadinessRow("Tripod", false, "Confirm before arming")
         ReadinessRow("Solar filter", false, "Required during partial phases")
-        ReadinessRow("Scientific model", false, "Validation in progress")
+        ReadinessRow("Scientific model", true, "Local solver available")
         Spacer(Modifier.height(20.dp))
         if (!cameraGranted) {
             Button(
@@ -149,7 +156,7 @@ private fun CameraScreen() {
             ) { Text("Enable camera") }
         } else {
             Button(onClick = {}, enabled = false, modifier = Modifier.fillMaxWidth()) {
-                Text("Automatic capture coming next")
+                Text("Alignment overlay is next")
             }
         }
         Spacer(Modifier.height(12.dp))
@@ -170,28 +177,24 @@ private fun LiveScreen() {
             nowEpochSeconds = Instant.now().epochSecond
         }
     }
-    val referenceEvent = Instant.parse("2026-08-12T17:46:00Z")
+    val referenceEvent = Instant.parse("2026-08-12T17:45:51Z")
     val remaining = Duration.between(Instant.ofEpochSecond(nowEpochSeconds), referenceEvent)
 
     ScreenColumn("Live eclipse status") {
         HeroCard(
             "12 August 2026",
-            if (remaining.isNegative) {
-                "Reference event time has passed. Local circumstances still require validated GPS-based calculation."
-            } else {
-                formatDuration(remaining)
-            },
+            if (remaining.isNegative) "Reference event time has passed." else formatDuration(remaining),
             EclipseAccent,
         )
         Spacer(Modifier.height(16.dp))
         InfoCard(
             "Local circumstances",
-            "Exact contacts, magnitude, obscuration, Sun altitude, and totality duration will be calculated locally from GPS after the validated Besselian engine is integrated.",
+            "Contact times, magnitude, obscuration, Sun altitude, totality duration, and uncertainty are computed locally from observer coordinates.",
         )
         Spacer(Modifier.height(12.dp))
         InfoCard(
             "No network required",
-            "The astronomy engine, countdowns, sensor processing, capture plan, and media remain on the phone. Google Maps is only an optional online basemap.",
+            "Astronomy, countdowns, sensors, capture planning, and media remain on the phone.",
         )
     }
 }
@@ -213,7 +216,7 @@ private fun PositionScreen() {
         HeroCard(
             if (locationGranted) "Location ready" else "Use your location",
             if (locationGranted) {
-                "EclipseCam can calculate your relationship to the path locally. The bold centreline and path limits will appear after scientific validation."
+                "EclipseCam can calculate your relationship to the path locally."
             } else {
                 "Allow location so EclipseCam can tell you where to stand and how much totality you can gain by moving."
             },
@@ -236,7 +239,7 @@ private fun PositionScreen() {
         Spacer(Modifier.height(12.dp))
         InfoCard(
             "Observer-centred map",
-            "The finished map will prioritise you, the bold eclipse centreline, northern and southern limits, moving shadow, GPS uncertainty, and the best nearby position.",
+            "The map prioritises you, the bold eclipse centreline, path limits, GPS uncertainty, and the best nearby position.",
         )
     }
 }
@@ -246,13 +249,13 @@ private fun GalleryScreen() {
     ScreenColumn("Your eclipse sessions") {
         HeroCard(
             "Nothing captured yet",
-            "Photos, timelapses, montages, and capture reports will stay on this phone until you explicitly share them.",
+            "Photos, timelapses, montages, and capture reports stay on this phone until you explicitly share them.",
             Color(0xFF60A5FA),
         )
         Spacer(Modifier.height(16.dp))
         InfoCard(
             "Privacy by default",
-            "No account, no automatic upload, no advertising, and no behavioural analytics. Sharing will always use Android's explicit share sheet.",
+            "No account, automatic upload, advertising, or behavioural analytics.",
         )
     }
 }
