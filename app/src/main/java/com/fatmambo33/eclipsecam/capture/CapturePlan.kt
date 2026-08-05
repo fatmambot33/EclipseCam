@@ -76,9 +76,21 @@ class CapturePlanBuilder(
             return CapturePlanResult.Unavailable("Eclipse contacts are not chronologically ordered.")
         }
 
-        val windows = if (circumstances.visibility == EclipseVisibility.TOTAL) {
-            totalWindows(circumstances, c1, c4)
+        val internalContacts = if (circumstances.visibility == EclipseVisibility.TOTAL) {
+            val c2 = circumstances.contacts[EclipseContact.C2]?.instantUtc
                 ?: return CapturePlanResult.Unavailable("Totality contacts are missing or invalid.")
+            val c3 = circumstances.contacts[EclipseContact.C3]?.instantUtc
+                ?: return CapturePlanResult.Unavailable("Totality contacts are missing or invalid.")
+            if (!(c1 < c2 && c2 < maximum && maximum < c3 && c3 < c4)) {
+                return CapturePlanResult.Unavailable("Totality contacts are missing or invalid.")
+            }
+            c2 to c3
+        } else {
+            null
+        }
+
+        val windows = if (internalContacts != null) {
+            totalWindows(c1, internalContacts.first, internalContacts.second, c4)
         } else {
             partialWindows(c1, maximum, c4)
         }
@@ -94,8 +106,21 @@ class CapturePlanBuilder(
                 instant = instant.plus(window.interval)
             }
         }
-        listOf(c1, maximum, c4).forEach { contact ->
-            instructions[contact] = CaptureInstruction(contact, CapturePhase.CONTACT_BURST, ExposureStrategy.CONTACT_BRACKET)
+
+        val exactContacts = buildList {
+            add(c1)
+            internalContacts?.let { (c2, c3) ->
+                add(c2)
+                add(c3)
+            }
+            add(c4)
+        }
+        exactContacts.forEach { contact ->
+            instructions[contact] = CaptureInstruction(
+                instantUtc = contact,
+                phase = CapturePhase.CONTACT_BURST,
+                exposureStrategy = ExposureStrategy.CONTACT_BRACKET,
+            )
         }
 
         val ordered = instructions.values.sortedBy(CaptureInstruction::instantUtc)
@@ -103,21 +128,17 @@ class CapturePlanBuilder(
     }
 
     private fun totalWindows(
-        circumstances: LocalEclipseCircumstances,
         c1: Instant,
+        c2: Instant,
+        c3: Instant,
         c4: Instant,
-    ): List<Window>? {
-        val c2 = circumstances.contacts[EclipseContact.C2]?.instantUtc ?: return null
-        val c3 = circumstances.contacts[EclipseContact.C3]?.instantUtc ?: return null
-        if (!(c1 < c2 && c2 < c3 && c3 < c4)) return null
-        return listOfNotNull(
-            window(c1, c2.minus(cadence.contactBurstRadius), cadence.partial, CapturePhase.PARTIAL, ExposureStrategy.FILTERED_PARTIAL),
-            window(c2.minus(cadence.contactBurstRadius), c2, cadence.contactBurst, CapturePhase.CONTACT_BURST, ExposureStrategy.CONTACT_BRACKET),
-            window(c2, c3, cadence.totality, CapturePhase.TOTALITY, ExposureStrategy.TOTALITY_BRACKET),
-            window(c3, c3.plus(cadence.contactBurstRadius), cadence.contactBurst, CapturePhase.CONTACT_BURST, ExposureStrategy.CONTACT_BRACKET),
-            window(c3.plus(cadence.contactBurstRadius), c4, cadence.partial, CapturePhase.PARTIAL, ExposureStrategy.FILTERED_PARTIAL),
-        )
-    }
+    ): List<Window> = listOfNotNull(
+        window(c1, c2.minus(cadence.contactBurstRadius), cadence.partial, CapturePhase.PARTIAL, ExposureStrategy.FILTERED_PARTIAL),
+        window(c2.minus(cadence.contactBurstRadius), c2, cadence.contactBurst, CapturePhase.CONTACT_BURST, ExposureStrategy.CONTACT_BRACKET),
+        window(c2, c3, cadence.totality, CapturePhase.TOTALITY, ExposureStrategy.TOTALITY_BRACKET),
+        window(c3, c3.plus(cadence.contactBurstRadius), cadence.contactBurst, CapturePhase.CONTACT_BURST, ExposureStrategy.CONTACT_BRACKET),
+        window(c3.plus(cadence.contactBurstRadius), c4, cadence.partial, CapturePhase.PARTIAL, ExposureStrategy.FILTERED_PARTIAL),
+    )
 
     private fun partialWindows(c1: Instant, maximum: Instant, c4: Instant): List<Window> = listOfNotNull(
         window(c1, maximum.minus(cadence.contactBurstRadius), cadence.partial, CapturePhase.PARTIAL, ExposureStrategy.FILTERED_PARTIAL),
