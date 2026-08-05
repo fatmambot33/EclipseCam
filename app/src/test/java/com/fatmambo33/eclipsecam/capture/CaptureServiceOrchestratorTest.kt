@@ -65,6 +65,31 @@ class CaptureServiceOrchestratorTest {
     }
 
     @Test
+    fun degradedSkipKeepsServiceRunningUntilCriticalCapture() {
+        var calls = 0
+        val fixture = fixture {
+            calls += 1
+            CameraCaptureResult.Captured
+        }
+        fixture.orchestrator.command(CaptureServiceCommand.START, start.minusSeconds(5))
+        val degraded = DeviceHealthDecision(
+            CaptureReadiness.DEGRADED,
+            setOf(DeviceHealthReason.BATTERY_MARGINAL),
+        )
+
+        val skipped = fixture.orchestrator.tick(start, degraded)
+        val completed = fixture.orchestrator.tick(start.plusSeconds(1), degraded)
+
+        assertTrue(skipped is CaptureExecutionResult.SkippedDegraded)
+        assertTrue(completed is CaptureExecutionResult.Captured)
+        assertEquals(1, calls)
+        assertEquals(CaptureServiceState.STOPPED, fixture.orchestrator.state)
+        assertEquals(CaptureSessionStatus.COMPLETED, fixture.coordinator.snapshot().status)
+        assertEquals(1, fixture.coordinator.snapshot().capturedCount)
+        assertEquals(1, fixture.coordinator.snapshot().skippedCount)
+    }
+
+    @Test
     fun completedExecutionStopsServiceWithoutLosingCheckpoint() {
         val fixture = fixture(CameraCaptureResult.Captured)
         fixture.orchestrator.command(CaptureServiceCommand.START, start.minusSeconds(5))

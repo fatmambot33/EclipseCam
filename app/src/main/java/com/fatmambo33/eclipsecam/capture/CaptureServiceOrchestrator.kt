@@ -74,18 +74,13 @@ class CaptureServiceOrchestrator(
             -> CaptureServiceState.STOPPED
 
             is CaptureExecutionResult.Captured ->
-                if (result.checkpoint.status == CaptureSessionStatus.COMPLETED) {
-                    CaptureServiceState.STOPPED
-                } else {
-                    state
-                }
+                stateAfterProgress(result.checkpoint)
 
             is CaptureExecutionResult.SkippedLate ->
-                if (result.checkpoint.status == CaptureSessionStatus.COMPLETED) {
-                    CaptureServiceState.STOPPED
-                } else {
-                    state
-                }
+                stateAfterProgress(result.checkpoint)
+
+            is CaptureExecutionResult.SkippedDegraded ->
+                stateAfterProgress(result.checkpoint)
 
             is CaptureExecutionResult.Waiting,
             is CaptureExecutionResult.Inactive,
@@ -93,4 +88,11 @@ class CaptureServiceOrchestrator(
         }
         return result
     }
+
+    private fun stateAfterProgress(checkpoint: CaptureSessionCheckpoint): CaptureServiceState =
+        if (checkpoint.status == CaptureSessionStatus.COMPLETED) {
+            CaptureServiceState.STOPPED
+        } else {
+            state
+        }
 }
