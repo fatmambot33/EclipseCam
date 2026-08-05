@@ -40,6 +40,8 @@ The format follows Keep a Changelog and Semantic Versioning.
 - Deterministic restoration that rejects corrupt or plan-incompatible local session state before execution
 - Framework-neutral capture execution engine that processes at most one due instruction per tick
 - Persisted safe pause on blocked device health or recoverable camera errors, fatal failure recording, and deterministic late-step skipping
+- Conservative capture capability gate that selects a compatible rear camera before arming
+- Explicit blocking when JPEG output or contact/totality bracketing controls are unavailable
 
 ### Changed
 - Updated the embedded 12 August 2026 model from the older 2014 NASA element set to the current NASA/GSFC dataset using delta T 75.4 seconds and greatest eclipse at 17:45:51 UTC
