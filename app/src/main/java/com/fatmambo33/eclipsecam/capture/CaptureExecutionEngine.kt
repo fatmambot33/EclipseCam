@@ -18,7 +18,10 @@ fun interface CaptureInstructionExecutor {
 sealed interface CaptureExecutionResult {
     data class Waiting(val nextInstructionAtUtc: Instant) : CaptureExecutionResult
     data class Captured(val checkpoint: CaptureSessionCheckpoint) : CaptureExecutionResult
-    data class SkippedLate(val checkpoint: CaptureSessionCheckpoint) : CaptureExecutionResult
+    data class SkippedLate(
+        val checkpoint: CaptureSessionCheckpoint,
+        val skippedInstructionCount: Int,
+    ) : CaptureExecutionResult
     data class Paused(val checkpoint: CaptureSessionCheckpoint, val reason: String) : CaptureExecutionResult
     data class Failed(val checkpoint: CaptureSessionCheckpoint, val reason: String) : CaptureExecutionResult
     data class Finished(val checkpoint: CaptureSessionCheckpoint) : CaptureExecutionResult
@@ -26,11 +29,11 @@ sealed interface CaptureExecutionResult {
 }
 
 /**
- * Executes at most one due capture instruction per tick.
+ * Executes at most one recoverable due capture instruction per tick.
  *
- * The engine is framework-neutral so scheduling, safeguard and camera-error behavior can be
- * validated without an Android device. Every state mutation flows through the coordinator and is
- * therefore persisted before the result is returned.
+ * Consecutive instructions beyond [maximumLateness] are skipped as one atomic checkpoint update so
+ * process suspension cannot leave the service replaying a stale backlog while the eclipse moves on.
+ * The engine is framework-neutral and every state mutation is persisted before returning.
  */
 class CaptureExecutionEngine(
     private val plan: CapturePlan,
@@ -66,9 +69,16 @@ class CaptureExecutionEngine(
         if (nowUtc.isBefore(instruction.instantUtc)) {
             return CaptureExecutionResult.Waiting(instruction.instantUtc)
         }
-        if (Duration.between(instruction.instantUtc, nowUtc) > maximumLateness) {
+
+        val lateCount = plan.instructions
+            .asSequence()
+            .drop(checkpoint.nextInstructionIndex)
+            .takeWhile { candidate -> Duration.between(candidate.instantUtc, nowUtc) > maximumLateness }
+            .count()
+        if (lateCount > 0) {
             return CaptureExecutionResult.SkippedLate(
-                coordinator.record(CaptureStepOutcome.SKIPPED, nowUtc),
+                checkpoint = coordinator.skip(lateCount, nowUtc),
+                skippedInstructionCount = lateCount,
             )
         }
 

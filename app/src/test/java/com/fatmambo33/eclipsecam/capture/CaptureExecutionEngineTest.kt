@@ -50,11 +50,49 @@ class CaptureExecutionEngineTest {
             CameraCaptureResult.Captured
         }
 
-        val result = fixture.engine.tick(start.plusSeconds(11), ready)
+        val result = fixture.engine.tick(start.plusSeconds(11), ready) as CaptureExecutionResult.SkippedLate
 
-        assertTrue(result is CaptureExecutionResult.SkippedLate)
         assertEquals(0, calls)
-        assertEquals(1, fixture.coordinator.snapshot().skippedCount)
+        assertEquals(1, result.skippedInstructionCount)
+        assertEquals(1, result.checkpoint.skippedCount)
+        assertEquals(1, result.checkpoint.nextInstructionIndex)
+        assertEquals(CaptureSessionStatus.RUNNING, result.checkpoint.status)
+        assertEquals(3, fixture.store.writes.size)
+    }
+
+    @Test
+    fun allIrrecoverablyLateInstructionsAreSkippedAtomically() {
+        var calls = 0
+        val fixture = fixture {
+            calls += 1
+            CameraCaptureResult.Captured
+        }
+
+        val result = fixture.engine.tick(start.plusSeconds(12), ready) as CaptureExecutionResult.SkippedLate
+
+        assertEquals(0, calls)
+        assertEquals(2, result.skippedInstructionCount)
+        assertEquals(2, result.checkpoint.skippedCount)
+        assertEquals(2, result.checkpoint.nextInstructionIndex)
+        assertEquals(CaptureSessionStatus.COMPLETED, result.checkpoint.status)
+        assertEquals(3, fixture.store.writes.size)
+    }
+
+    @Test
+    fun latenessToleranceBoundaryRemainsEligibleForCapture() {
+        var calls = 0
+        val fixture = fixture {
+            calls += 1
+            CameraCaptureResult.Captured
+        }
+
+        val skipped = fixture.engine.tick(start.plusSeconds(11), ready) as CaptureExecutionResult.SkippedLate
+        val captured = fixture.engine.tick(start.plusSeconds(11), ready) as CaptureExecutionResult.Captured
+
+        assertEquals(1, skipped.skippedInstructionCount)
+        assertEquals(1, calls)
+        assertEquals(1, captured.checkpoint.capturedCount)
+        assertEquals(CaptureSessionStatus.COMPLETED, captured.checkpoint.status)
     }
 
     @Test

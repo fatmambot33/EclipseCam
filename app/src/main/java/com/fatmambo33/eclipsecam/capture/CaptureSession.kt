@@ -61,6 +61,19 @@ class CaptureSession private constructor(
         )
     }
 
+    fun skip(count: Int, nowUtc: Instant): CaptureSessionCheckpoint = transition(nowUtc) {
+        require(status == CaptureSessionStatus.RUNNING)
+        require(count > 0)
+        require(nextInstructionIndex + count <= plan.instructions.size)
+        val next = nextInstructionIndex + count
+        copy(
+            nextInstructionIndex = next,
+            skippedCount = skippedCount + count,
+            status = if (next == plan.instructions.size) CaptureSessionStatus.COMPLETED else status,
+            updatedAtUtc = nowUtc,
+        )
+    }
+
     fun fail(reason: String, nowUtc: Instant): CaptureSessionCheckpoint = transition(nowUtc) {
         require(status != CaptureSessionStatus.COMPLETED)
         require(reason.isNotBlank())
