@@ -63,16 +63,26 @@ class CaptureServiceRecoveryBootstrapTest {
 
     @Test
     fun terminalSessionsAreNotResumable() {
-        listOf(CaptureSessionStatus.COMPLETED, CaptureSessionStatus.FAILED).forEach { status ->
+        val completed = checkpoint(CaptureSessionStatus.COMPLETED).copy(
+            nextInstructionIndex = 1,
+            capturedCount = 1,
+        )
+        val failed = CaptureSessionCheckpoint(
+            sessionId = "session",
+            planStartsAtUtc = plan.startsAtUtc,
+            planEndsAtUtc = plan.endsAtUtc,
+            nextInstructionIndex = 0,
+            capturedCount = 0,
+            skippedCount = 0,
+            status = CaptureSessionStatus.FAILED,
+            updatedAtUtc = start,
+            failureReason = "Camera failed",
+        )
+
+        listOf(completed, failed).forEach { terminalCheckpoint ->
             val result = bootstrap(
                 InMemoryPlanStore(plan),
-                InMemoryCheckpointStore(
-                    checkpoint(status).copy(
-                        nextInstructionIndex = if (status == CaptureSessionStatus.COMPLETED) 1 else 0,
-                        capturedCount = if (status == CaptureSessionStatus.COMPLETED) 1 else 0,
-                        failureReason = if (status == CaptureSessionStatus.FAILED) "Camera failed" else null,
-                    ),
-                ),
+                InMemoryCheckpointStore(terminalCheckpoint),
             ).load()
 
             assertTrue(result is CaptureServiceBootstrapResult.Rejected)
