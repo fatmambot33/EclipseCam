@@ -50,6 +50,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.fatmambo33.eclipsecam.camera.preview.CameraPreviewState
+import com.fatmambo33.eclipsecam.camera.preview.CameraPreviewSurface
+import com.fatmambo33.eclipsecam.camera.preview.PreviewLens
 import kotlinx.coroutines.delay
 import java.time.Duration
 import java.time.Instant
@@ -122,25 +125,42 @@ private fun CameraScreen() {
     var cameraGranted by remember {
         mutableStateOf(context.checkSelfPermission(Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED)
     }
+    var previewState by remember {
+        mutableStateOf<CameraPreviewState>(
+            if (cameraGranted) CameraPreviewState.Starting else CameraPreviewState.WaitingForPermission,
+        )
+    }
     val cameraPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
         cameraGranted = it
     }
 
     ScreenColumn("Prepare your phone") {
         HeroCard(
-            if (cameraGranted) "Camera ready" else "Camera access needed",
-            if (cameraGranted) {
-                "Mount the phone securely. Eclipse trajectory guidance will appear here as the scientific engine is validated."
-            } else {
-                "EclipseCam needs camera access for alignment guidance and automatic capture."
-            },
-            if (cameraGranted) EclipseReady else EclipseWarning,
+            previewTitle(previewState),
+            previewMessage(previewState),
+            if (previewState is CameraPreviewState.Streaming) EclipseReady else EclipseWarning,
         )
         Spacer(Modifier.height(16.dp))
-        ReadinessRow("Camera", cameraGranted, if (cameraGranted) "Available" else "Permission required")
+        Card(
+            modifier = Modifier.fillMaxWidth().height(260.dp),
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.Black),
+        ) {
+            CameraPreviewSurface(
+                permissionGranted = cameraGranted,
+                modifier = Modifier.fillMaxSize(),
+                onStateChanged = { previewState = it },
+            )
+        }
+        Spacer(Modifier.height(16.dp))
+        ReadinessRow(
+            "Camera preview",
+            previewState is CameraPreviewState.Streaming,
+            previewDetail(previewState),
+        )
         ReadinessRow("Tripod", false, "Confirm before arming")
         ReadinessRow("Solar filter", false, "Required during partial phases")
-        ReadinessRow("Scientific model", false, "Validation in progress")
+        ReadinessRow("Scientific model", true, "Validated local circumstances available")
         Spacer(Modifier.height(20.dp))
         if (!cameraGranted) {
             Button(
@@ -149,7 +169,7 @@ private fun CameraScreen() {
             ) { Text("Enable camera") }
         } else {
             Button(onClick = {}, enabled = false, modifier = Modifier.fillMaxWidth()) {
-                Text("Automatic capture coming next")
+                Text("Automatic capture not armed")
             }
         }
         Spacer(Modifier.height(12.dp))
@@ -159,6 +179,32 @@ private fun CameraScreen() {
             color = Color(0xFFFCA5A5),
         )
     }
+}
+
+private fun previewTitle(state: CameraPreviewState): String = when (state) {
+    CameraPreviewState.WaitingForPermission -> "Camera access needed"
+    CameraPreviewState.Starting -> "Starting camera"
+    is CameraPreviewState.Streaming -> "Live preview ready"
+    is CameraPreviewState.Unavailable -> "Camera unavailable"
+}
+
+private fun previewMessage(state: CameraPreviewState): String = when (state) {
+    CameraPreviewState.WaitingForPermission ->
+        "EclipseCam needs camera access for local alignment guidance and capture."
+    CameraPreviewState.Starting -> "Connecting the preview to this screen and lifecycle."
+    is CameraPreviewState.Streaming ->
+        "Mount the phone securely. The preview stops automatically when this screen leaves the lifecycle."
+    is CameraPreviewState.Unavailable -> state.reason
+}
+
+private fun previewDetail(state: CameraPreviewState): String = when (state) {
+    CameraPreviewState.WaitingForPermission -> "Permission required"
+    CameraPreviewState.Starting -> "Binding CameraX"
+    is CameraPreviewState.Streaming -> when (state.lens) {
+        PreviewLens.BACK -> "Back camera streaming"
+        PreviewLens.FRONT -> "Front-camera fallback streaming"
+    }
+    is CameraPreviewState.Unavailable -> state.reason
 }
 
 @Composable
