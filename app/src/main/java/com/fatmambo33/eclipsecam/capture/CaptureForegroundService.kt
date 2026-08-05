@@ -32,8 +32,7 @@ class CaptureForegroundService : Service() {
         state = CaptureServiceStateReducer.reduce(state, command)
         when (state) {
             CaptureServiceState.RUNNING,
-            CaptureServiceState.PAUSED,
-            -> startForeground(NOTIFICATION_ID, buildNotification(state))
+            CaptureServiceState.PAUSED -> startForeground(NOTIFICATION_ID, buildNotification(state))
 
             CaptureServiceState.STOPPED -> {
                 stopForeground(STOP_FOREGROUND_REMOVE)
