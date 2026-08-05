@@ -1,5 +1,6 @@
 package com.fatmambo33.eclipsecam.capture
 
+import java.io.File
 import java.nio.file.Files
 import java.time.Instant
 import org.junit.Assert.assertEquals
