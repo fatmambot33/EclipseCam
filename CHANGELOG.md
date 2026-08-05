@@ -53,6 +53,8 @@ The format follows Keep a Changelog and Semantic Versioning.
 - Durable foreground-service pause, resume, and stop command synchronization
 - Process-recovery normalization that persists previously running sessions as paused
 - App-private, collision-safe JPEG output reservation with stable UTC filenames and failed-capture cleanup
+- Deterministic camera capture requests for JPEG size, focus, white balance, and phase-sensitive exposure programs
+- Conservative -2/0/+2 EV bracketing with manual-sensor fallback and explicit unsupported results
 
 ### Changed
 - Updated the embedded 12 August 2026 model from the older 2014 NASA element set to the current NASA/GSFC dataset using delta T 75.4 seconds and greatest eclipse at 17:45:51 UTC
@@ -66,6 +68,7 @@ The format follows Keep a Changelog and Semantic Versioning.
 - Physical orientation validation on the Pixel 7 Pro in portrait, landscape, flat, mounted and moving states
 - Independent high-precision local-circumstances and full path-edge validation
 - CameraX preview lifecycle instrumentation, orientation-change testing and physical validation of every Pixel 7 Pro rear lens
+- CameraX execution validation for focus, exposure bracketing, white-balance locking, and output size on every Pixel 7 Pro rear lens
 - Long-session battery drain, charging, storage exhaustion and real thermal-throttling validation on the Pixel 7 Pro
 - AR overlay screenshot tests and outdoor Pixel 7 Pro alignment validation against known Sun positions
 - Foreground capture service lifecycle, screen-off recovery and long-duration Pixel 7 Pro validation
