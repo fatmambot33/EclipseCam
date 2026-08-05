@@ -129,11 +129,11 @@ class CaptureExecutionEngineTest {
     fun customDegradedPolicyCanPreserveRoutineCapture() {
         var calls = 0
         val fixture = fixtureWithExecutor(
+            degradedCapturePolicy = DegradedCapturePolicy { _, _ -> true },
             executor = CaptureInstructionExecutor {
                 calls += 1
                 CameraCaptureResult.Captured
             },
-            degradedCapturePolicy = DegradedCapturePolicy { _, _ -> true },
         )
         val degraded = DeviceHealthDecision(
             CaptureReadiness.DEGRADED,
@@ -188,11 +188,11 @@ class CaptureExecutionEngineTest {
     }
 
     private fun fixture(result: CameraCaptureResult): Fixture =
-        fixtureWithExecutor(CaptureInstructionExecutor { result })
+        fixtureWithExecutor(executor = CaptureInstructionExecutor { result })
 
     private fun fixtureWithExecutor(
-        executor: CaptureInstructionExecutor,
         degradedCapturePolicy: DegradedCapturePolicy = DegradedCapturePolicy.PreserveCriticalPhases,
+        executor: CaptureInstructionExecutor,
     ): Fixture {
         val store = RecordingStore()
         val coordinator = CaptureSessionCoordinator.arm(
