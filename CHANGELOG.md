@@ -40,6 +40,7 @@ The format follows Keep a Changelog and Semantic Versioning.
 - Deterministic restoration that rejects corrupt or plan-incompatible local session state before execution
 - Framework-neutral capture execution engine that processes at most one due instruction per tick
 - Persisted safe pause on blocked device health or recoverable camera errors, fatal failure recording, and deterministic late-step skipping
+- Phase-aware degraded-health shedding that skips routine partial captures while preserving contact bursts and totality
 - Conservative capture capability gate that selects a compatible rear camera before arming
 - Explicit blocking when JPEG output or contact/totality bracketing controls are unavailable
 - Capture service orchestrator that keeps foreground-service commands, durable session state, and execution outcomes synchronized
