@@ -11,6 +11,11 @@ data class CaptureOutput(
     val imageFile: File,
 )
 
+interface CaptureOutputAllocator {
+    fun reserve(sessionId: String, instructionIndex: Int, capturedAtUtc: Instant): CaptureOutput
+    fun release(output: CaptureOutput): Boolean
+}
+
 /**
  * Allocates app-private, collision-safe JPEG destinations without embedding location data.
  *
@@ -20,8 +25,8 @@ data class CaptureOutput(
  */
 class CaptureOutputStore(
     private val rootDirectory: File,
-) {
-    fun reserve(
+) : CaptureOutputAllocator {
+    override fun reserve(
         sessionId: String,
         instructionIndex: Int,
         capturedAtUtc: Instant,
@@ -49,7 +54,7 @@ class CaptureOutputStore(
         error("Unable to reserve a unique capture output file.")
     }
 
-    fun release(output: CaptureOutput): Boolean =
+    override fun release(output: CaptureOutput): Boolean =
         !output.imageFile.exists() || output.imageFile.delete()
 
     companion object {
