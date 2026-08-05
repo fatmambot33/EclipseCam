@@ -56,6 +56,8 @@ The format follows Keep a Changelog and Semantic Versioning.
 - Deterministic camera capture requests for JPEG size, focus, white balance, and phase-sensitive exposure programs
 - Conservative -2/0/+2 EV bracketing with manual-sensor fallback and explicit unsupported results
 - Atomic per-instruction capture sequence planning with ordered exposure frames and rollback of partial output reservations
+- Transactional camera sequence execution with ordered frame capture and explicit recoverable or fatal outcomes
+- Whole-bracket output cleanup after preparation, frame, backend, or close failures
 
 ### Changed
 - Updated the embedded 12 August 2026 model from the older 2014 NASA element set to the current NASA/GSFC dataset using delta T 75.4 seconds and greatest eclipse at 17:45:51 UTC
@@ -86,7 +88,6 @@ The format follows Keep a Changelog and Semantic Versioning.
 - Local-first application architecture
 - CameraX integration foundation
 - Observer-centric eclipse model foundation
-- Google Maps integration framework
 
 ### Changed
 - Established release pipeline and versioning strategy.
