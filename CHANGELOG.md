@@ -18,6 +18,7 @@ The format follows Keep a Changelog and Semantic Versioning.
 - Unit coverage for orientation normalization, landscape mapping, gyroscope motion and invalid samples
 - Scientific validation document with authoritative source, tolerance and release-gate status
 - Exact regression tests for the current NASA/GSFC 12 August 2026 Besselian dataset
+- Explicit solver diagnostics for converged, no-eclipse and failed numerical outcomes
 
 ### Changed
 - Updated the embedded 12 August 2026 model from the older 2014 NASA element set to the current NASA/GSFC dataset using delta T 75.4 seconds and greatest eclipse at 17:45:51 UTC

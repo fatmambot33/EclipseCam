@@ -29,6 +29,21 @@ enum class EclipseContact {
     C4,
 }
 
+/** Explicit outcome of the bounded numerical search. */
+enum class SolverStatus {
+    CONVERGED,
+    NO_ECLIPSE,
+    FAILED,
+}
+
+/** Public contract for the bounded root and minimum searches. */
+data class SolverDiagnostics(
+    val status: SolverStatus,
+    val rootToleranceMillis: Long,
+    val maximumRootIterations: Int,
+    val maximumMinimumIterations: Int,
+)
+
 data class ContactCircumstance(
     val contact: EclipseContact,
     val instantUtc: Instant,
@@ -51,7 +66,31 @@ data class LocalEclipseCircumstances(
     val totalityDurationSeconds: Double?,
     val uncertainty: ModelUncertainty,
     val modelValid: Boolean,
-)
+) {
+    /**
+     * Numerical outcome exposed to callers instead of leaving convergence implicit.
+     *
+     * A geometrically valid search with no external contacts is not a numerical
+     * failure; it is reported as [SolverStatus.NO_ECLIPSE].
+     */
+    val solverDiagnostics: SolverDiagnostics
+        get() = SolverDiagnostics(
+            status = when {
+                !modelValid -> SolverStatus.FAILED
+                visibility == EclipseVisibility.NONE -> SolverStatus.NO_ECLIPSE
+                else -> SolverStatus.CONVERGED
+            },
+            rootToleranceMillis = ROOT_TOLERANCE_MILLIS,
+            maximumRootIterations = MAXIMUM_ROOT_ITERATIONS,
+            maximumMinimumIterations = MAXIMUM_MINIMUM_ITERATIONS,
+        )
+
+    private companion object {
+        const val ROOT_TOLERANCE_MILLIS = 10L
+        const val MAXIMUM_ROOT_ITERATIONS = 50
+        const val MAXIMUM_MINIMUM_ITERATIONS = 80
+    }
+}
 
 /**
  * Calculates eclipse circumstances without network access.
