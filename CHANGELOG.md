@@ -55,6 +55,7 @@ The format follows Keep a Changelog and Semantic Versioning.
 - App-private, collision-safe JPEG output reservation with stable UTC filenames and failed-capture cleanup
 - Deterministic camera capture requests for JPEG size, focus, white balance, and phase-sensitive exposure programs
 - Conservative -2/0/+2 EV bracketing with manual-sensor fallback and explicit unsupported results
+- Atomic per-instruction capture sequence planning with ordered exposure frames and rollback of partial output reservations
 
 ### Changed
 - Updated the embedded 12 August 2026 model from the older 2014 NASA element set to the current NASA/GSFC dataset using delta T 75.4 seconds and greatest eclipse at 17:45:51 UTC
