@@ -5,6 +5,8 @@ import androidx.camera.core.CameraSelector
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
@@ -14,17 +16,21 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.fatmambo33.eclipsecam.ar.EclipseTrajectoryOverlay
+import com.fatmambo33.eclipsecam.ar.FramingAssessment
 
 /**
- * Lifecycle-bound CameraX preview that never captures or uploads media.
+ * Lifecycle-bound CameraX preview with a non-interactive eclipse trajectory overlay.
  *
  * The back camera is preferred. Devices without a back camera fall back to the
- * front camera and report the selected lens through [onStateChanged].
+ * front camera and report the selected lens through [onStateChanged]. Media is
+ * never captured or uploaded by this surface.
  */
 @Composable
 fun CameraPreviewSurface(
     permissionGranted: Boolean,
     modifier: Modifier = Modifier,
+    framingAssessment: FramingAssessment? = null,
     onStateChanged: (CameraPreviewState) -> Unit = {},
 ) {
     val context = LocalContext.current
@@ -37,10 +43,16 @@ fun CameraPreviewSurface(
         }
     }
 
-    AndroidView(
-        factory = { previewView },
-        modifier = modifier,
-    )
+    Box(modifier = modifier) {
+        AndroidView(
+            factory = { previewView },
+            modifier = Modifier.fillMaxSize(),
+        )
+        EclipseTrajectoryOverlay(
+            assessment = framingAssessment,
+            modifier = Modifier.fillMaxSize(),
+        )
+    }
 
     DisposableEffect(permissionGranted, context, lifecycleOwner, previewView) {
         if (!permissionGranted) {
