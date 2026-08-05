@@ -60,7 +60,7 @@ class ProjectionEngineTest {
         assertTrue(unrolled.point.xPixels > 500.0)
         assertEquals(250.0, unrolled.point.yPixels, 0.5)
         assertEquals(500.0, rolled.point.xPixels, 0.5)
-        assertTrue(rolled.point.yPixels < 250.0)
+        assertTrue(rolled.point.yPixels > 250.0)
     }
 
     @Test
