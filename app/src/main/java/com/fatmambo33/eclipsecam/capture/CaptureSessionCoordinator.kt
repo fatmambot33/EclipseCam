@@ -25,6 +25,11 @@ class CaptureSessionCoordinator private constructor(
         nowUtc: Instant,
     ): CaptureSessionCheckpoint = persist(session.record(outcome, nowUtc))
 
+    fun skip(
+        count: Int,
+        nowUtc: Instant,
+    ): CaptureSessionCheckpoint = persist(session.skip(count, nowUtc))
+
     fun fail(
         reason: String,
         nowUtc: Instant,
