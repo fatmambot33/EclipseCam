@@ -30,6 +30,8 @@ The format follows Keep a Changelog and Semantic Versioning.
 - AR projection validation documentation and JVM coverage for portrait, landscape, clipping, behind-camera and low-confidence cases
 - Bounded phase-sensitive capture plan derived from validated C1/C2/MAX/C3/C4 contacts
 - Conservative arming gate for model validity, orientation stability, framing, solar-filter acknowledgement and device health
+- Framework-neutral local capture-session checkpoints with deterministic pause, resume, completion and failure recovery
+- Recovery validation that rejects mismatched plans, invalid indexes and inconsistent counters
 
 ### Changed
 - Updated the embedded 12 August 2026 model from the older 2014 NASA element set to the current NASA/GSFC dataset using delta T 75.4 seconds and greatest eclipse at 17:45:51 UTC
