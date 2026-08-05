@@ -16,35 +16,66 @@ import com.fatmambo33.eclipsecam.R
 
 class CaptureForegroundService : Service() {
     private var state = CaptureServiceState.IDLE
+    private var recoveryReady = false
 
     override fun onCreate() {
         super.onCreate()
         createNotificationChannel()
+        when (val recovery = CaptureServiceRecoveryBootstrap.fromFilesDirectory(filesDir).load()) {
+            is CaptureServiceBootstrapResult.Ready -> {
+                state = recovery.initialState
+                recoveryReady = true
+            }
+
+            CaptureServiceBootstrapResult.Missing,
+            is CaptureServiceBootstrapResult.Rejected,
+            -> {
+                state = CaptureServiceState.IDLE
+                recoveryReady = false
+            }
+        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        val command = when (intent?.action) {
-            ACTION_PAUSE -> CaptureServiceCommand.PAUSE
-            ACTION_STOP -> CaptureServiceCommand.STOP
-            else -> CaptureServiceCommand.START
+        if (intent?.action == ACTION_STOP) {
+            stopCaptureService()
+            return START_NOT_STICKY
+        }
+        if (!recoveryReady) {
+            stopSelf()
+            return START_NOT_STICKY
         }
 
+        // A sticky restart has no explicit user command. Keep a recovered session paused until the
+        // user deliberately resumes it rather than silently restarting camera work.
+        if (intent == null) {
+            state = CaptureServiceState.PAUSED
+            startForeground(NOTIFICATION_ID, buildNotification(state))
+            return START_STICKY
+        }
+
+        val command = when (intent.action) {
+            ACTION_PAUSE -> CaptureServiceCommand.PAUSE
+            else -> CaptureServiceCommand.START
+        }
         state = CaptureServiceStateReducer.reduce(state, command)
         when (state) {
             CaptureServiceState.RUNNING,
             CaptureServiceState.PAUSED -> startForeground(NOTIFICATION_ID, buildNotification(state))
 
-            CaptureServiceState.STOPPED -> {
-                stopForeground(STOP_FOREGROUND_REMOVE)
-                stopSelf()
-            }
-
+            CaptureServiceState.STOPPED -> stopCaptureService()
             CaptureServiceState.IDLE -> Unit
         }
         return START_STICKY
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
+
+    private fun stopCaptureService() {
+        state = CaptureServiceState.STOPPED
+        stopForeground(STOP_FOREGROUND_REMOVE)
+        stopSelf()
+    }
 
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
