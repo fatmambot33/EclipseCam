@@ -50,7 +50,6 @@ class AndroidCameraXJpegCapturePort(
  */
 class CameraXJpegCapture(
     private val port: CameraXJpegCapturePort,
-    private val failureAdapter: CameraXCaptureFailureAdapter = CameraXCaptureFailureAdapter(),
 ) {
     suspend fun capture(frame: CameraCaptureFrame): CameraFrameCaptureResult =
         suspendCancellableCoroutine { continuation ->
@@ -65,7 +64,7 @@ class CameraXJpegCapture(
 
                     override fun onError(errorCode: Int, message: String?) {
                         if (continuation.isActive) {
-                            continuation.resume(failureAdapter.map(errorCode, message))
+                            continuation.resume(CameraXCaptureFailureAdapter.classify(errorCode, message))
                         }
                     }
                 },
