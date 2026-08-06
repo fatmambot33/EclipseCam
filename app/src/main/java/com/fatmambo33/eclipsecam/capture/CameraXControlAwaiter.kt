@@ -18,7 +18,7 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 class CameraXControlAwaiter {
     suspend fun await(
         operation: String,
-        future: ListenableFuture<Void>,
+        future: ListenableFuture<*>,
     ): CameraXControlResult = suspendCancellableCoroutine { continuation ->
         future.addListener(
             {
