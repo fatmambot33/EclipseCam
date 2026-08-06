@@ -58,6 +58,8 @@ The format follows Keep a Changelog and Semantic Versioning.
 - Atomic per-instruction capture sequence planning with ordered exposure frames and rollback of partial output reservations
 - Transactional camera sequence execution with ordered frame capture and explicit recoverable or fatal outcomes
 - Whole-bracket output cleanup after preparation, frame, backend, or close failures
+- CameraX callback error adaptation into stable recoverable and fatal capture outcomes
+- Fail-closed handling for unknown future CameraX image-capture error codes
 
 ### Changed
 - Updated the embedded 12 August 2026 model from the older 2014 NASA element set to the current NASA/GSFC dataset using delta T 75.4 seconds and greatest eclipse at 17:45:51 UTC
@@ -88,6 +90,7 @@ The format follows Keep a Changelog and Semantic Versioning.
 - Local-first application architecture
 - CameraX integration foundation
 - Observer-centric eclipse model foundation
+- Google Maps integration framework
 
 ### Changed
 - Established release pipeline and versioning strategy.
