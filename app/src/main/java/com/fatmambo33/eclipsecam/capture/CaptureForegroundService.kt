@@ -67,7 +67,10 @@ class CaptureForegroundService : Service(), LifecycleOwner {
 
     override fun onBind(intent: Intent?): IBinder? = null
 
-    private fun createRuntimeHost(): CaptureForegroundServiceRuntimeHost {
+    private fun createRuntimeHost(): CaptureForegroundServiceRuntimeHost =
+        runtimeHostFactoryOverride?.invoke(this) ?: createProductionRuntimeHost()
+
+    private fun createProductionRuntimeHost(): CaptureForegroundServiceRuntimeHost {
         val recovery = CaptureServiceRecoveryBootstrap.fromFilesDirectory(filesDir)
         val inventory = CameraCapabilityInventory(applicationContext)
         val selectedCamera = {
@@ -103,7 +106,10 @@ class CaptureForegroundService : Service(), LifecycleOwner {
 
     private fun applyRoute(result: CaptureForegroundServiceRouteResult) {
         when (result) {
-            is CaptureForegroundServiceRouteResult.Active -> startForeground(NOTIFICATION_ID, buildNotification(result.state))
+            is CaptureForegroundServiceRouteResult.Active -> startForeground(
+                NOTIFICATION_ID,
+                buildNotification(result.state),
+            )
             CaptureForegroundServiceRouteResult.Stop -> stopCaptureService()
         }
     }
@@ -160,7 +166,11 @@ class CaptureForegroundService : Service(), LifecycleOwner {
             .setOnlyAlertOnce(true)
             .setCategory(NotificationCompat.CATEGORY_SERVICE)
             .addAction(0, actionLabel, actionIntent)
-            .addAction(0, getString(R.string.capture_notification_stop), servicePendingIntent(ACTION_STOP, 3))
+            .addAction(
+                0,
+                getString(R.string.capture_notification_stop),
+                servicePendingIntent(ACTION_STOP, 3),
+            )
             .build()
     }
 
@@ -173,11 +183,19 @@ class CaptureForegroundService : Service(), LifecycleOwner {
         )
 
     companion object {
+        internal const val NOTIFICATION_ID = 20260812
         private const val CHANNEL_ID = "eclipse_capture"
-        private const val NOTIFICATION_ID = 20260812
         private const val ACTION_START = "com.fatmambo33.eclipsecam.capture.START"
         private const val ACTION_PAUSE = "com.fatmambo33.eclipsecam.capture.PAUSE"
         private const val ACTION_STOP = "com.fatmambo33.eclipsecam.capture.STOP"
+
+        @Volatile
+        internal var runtimeHostFactoryOverride:
+            ((CaptureForegroundService) -> CaptureForegroundServiceRuntimeHost)? = null
+
+        internal fun clearRuntimeHostFactoryOverride() {
+            runtimeHostFactoryOverride = null
+        }
 
         fun start(context: Context) {
             ContextCompat.startForegroundService(
