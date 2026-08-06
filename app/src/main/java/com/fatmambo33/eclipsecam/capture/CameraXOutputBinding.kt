@@ -2,6 +2,7 @@ package com.fatmambo33.eclipsecam.capture
 
 import android.util.Size
 import androidx.camera.camera2.interop.Camera2CameraInfo
+import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
@@ -33,6 +34,7 @@ data class CameraXOutputBinding(
  * The previous use cases are removed before binding so preview and capture never point at different
  * cameras. A failed request leaves no partially bound automatic-capture pipeline.
  */
+@OptIn(ExperimentalCamera2Interop::class)
 class AndroidCameraXOutputBinder(
     private val provider: ProcessCameraProvider,
     private val lifecycleOwner: LifecycleOwner,
