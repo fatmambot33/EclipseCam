@@ -40,7 +40,7 @@ class CaptureForegroundServiceCommandRouter(
             CaptureForegroundServiceRequest.STOP,
             -> error("Request handled before command mapping.")
         }
-        host.command(command) ?: return CaptureForegroundServiceRouteResult.Stop
+        host.command(command)
         return activeOrStop(host.state)
     }
 
