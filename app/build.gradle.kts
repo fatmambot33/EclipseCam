@@ -44,10 +44,7 @@ android {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro",
-            )
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             if (providers.environmentVariable("ECLIPSE_CAM_STORE_FILE").isPresent) {
                 signingConfig = signingConfigs.getByName("release")
             }
@@ -79,4 +76,7 @@ dependencies {
     implementation("org.maplibre.gl:android-sdk:13.0.2")
 
     testImplementation("junit:junit:4.13.2")
+    androidTestImplementation("androidx.test.ext:junit:1.2.1")
+    androidTestImplementation("androidx.test:rules:1.6.1")
+    androidTestImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
 }
