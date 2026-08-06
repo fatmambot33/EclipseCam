@@ -5,10 +5,10 @@ import android.app.NotificationManager
 import android.content.Intent
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import androidx.test.core.app.ActivityScenario
-import androidx.test.core.app.ServiceScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
+import androidx.test.rule.ServiceTestRule
 import com.fatmambo33.eclipsecam.MainActivity
 import java.time.Instant
 import java.util.Collections
@@ -29,14 +29,19 @@ class CaptureForegroundServiceLifecycleInstrumentationTest {
     val notificationPermission: GrantPermissionRule =
         GrantPermissionRule.grant(Manifest.permission.POST_NOTIFICATIONS)
 
+    @get:Rule
+    val serviceRule = ServiceTestRule()
+
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private val context get() = instrumentation.targetContext
+    private lateinit var service: CaptureForegroundService
     private lateinit var session: RecordingSession
 
     @Before
     fun installRuntime() {
         session = RecordingSession(CaptureServiceState.PAUSED)
-        CaptureForegroundService.runtimeHostFactoryOverride = {
+        CaptureForegroundService.runtimeHostFactoryOverride = { createdService ->
+            service = createdService
             CaptureForegroundServiceRuntimeHost(
                 recoveryLoader = CaptureServiceRecoveryLoader(::readyRecovery),
                 sessionCreator = CaptureRuntimeSessionCreator { session },
@@ -55,7 +60,7 @@ class CaptureForegroundServiceLifecycleInstrumentationTest {
     fun serviceRoutesLifecycleCommandsAndKeepsForegroundStateAcrossActivityRecreation() {
         val startIntent = Intent(context, CaptureForegroundService::class.java)
             .setAction("com.fatmambo33.eclipsecam.capture.START")
-        val service = ServiceScenario.launch<CaptureForegroundService>(startIntent)
+        serviceRule.startService(startIntent)
 
         await { session.state == CaptureServiceState.RUNNING }
         await {
@@ -78,8 +83,8 @@ class CaptureForegroundServiceLifecycleInstrumentationTest {
             assertEquals(CaptureServiceState.PAUSED, session.state)
         }
 
-        service.onService {
-            val result = it.onStartCommand(null, 0, 2)
+        instrumentation.runOnMainSync {
+            val result = service.onStartCommand(null, 0, 2)
             assertEquals(android.app.Service.START_STICKY, result)
         }
         assertEquals(CaptureServiceState.PAUSED, session.state)
@@ -101,7 +106,6 @@ class CaptureForegroundServiceLifecycleInstrumentationTest {
 
         CaptureForegroundService.stop(context)
         await { CaptureServiceCommand.STOP in session.commandsSnapshot() }
-        service.close()
         await { session.closed }
         assertTrue(session.closed)
         assertEquals(CaptureServiceState.STOPPED, session.state)
