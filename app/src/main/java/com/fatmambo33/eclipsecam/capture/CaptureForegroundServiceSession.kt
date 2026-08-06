@@ -2,6 +2,16 @@ package com.fatmambo33.eclipsecam.capture
 
 import java.time.Instant
 
+interface CaptureForegroundRuntimeSession : AutoCloseable {
+    val state: CaptureServiceState
+
+    fun command(command: CaptureServiceCommand): CaptureRuntimeCommandResult?
+
+    fun tick(): CaptureRuntimeTickResult?
+
+    override fun close()
+}
+
 /**
  * Lifecycle owner for one recovered foreground capture session.
  *
@@ -15,7 +25,7 @@ class CaptureForegroundServiceSession(
     healthProvider: CaptureRuntimeHealthProvider,
     nowUtc: () -> Instant = Instant::now,
     scheduler: CaptureWakeupTaskScheduler = ExecutorCaptureWakeupTaskScheduler(),
-) : AutoCloseable {
+) : CaptureForegroundRuntimeSession {
     private val lock = Any()
     private val clock = nowUtc
     private var closed = false
@@ -35,15 +45,15 @@ class CaptureForegroundServiceSession(
         )
     }
 
-    val state: CaptureServiceState
+    override val state: CaptureServiceState
         get() = synchronized(lock) { driver.state }
 
-    fun command(command: CaptureServiceCommand): CaptureRuntimeCommandResult? = synchronized(lock) {
+    override fun command(command: CaptureServiceCommand): CaptureRuntimeCommandResult? = synchronized(lock) {
         if (closed) return null
         driver.command(command, clock())
     }
 
-    fun tick(): CaptureRuntimeTickResult? = synchronized(lock) {
+    override fun tick(): CaptureRuntimeTickResult? = synchronized(lock) {
         if (closed) return null
         driver.tick(clock())
     }
