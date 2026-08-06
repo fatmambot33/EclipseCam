@@ -21,13 +21,14 @@ sealed interface CameraCaptureSequenceResult {
 /**
  * Framework-neutral boundary implemented by the Android CameraX adapter.
  *
- * Implementations prepare focus, white balance, metering and output size once, then capture each
- * frame in order. [close] must restore or release temporary camera controls and is always invoked.
+ * CameraX preparation and image capture complete through asynchronous callbacks, so each operation
+ * is suspending. Implementations must resume only after the requested camera state or JPEG write is
+ * complete. [close] must restore or release temporary controls and is always invoked.
  */
 interface CameraCaptureSequenceBackend {
-    fun prepare(request: CameraCaptureRequest): CameraSequencePreparationResult
-    fun capture(frame: CameraCaptureFrame): CameraFrameCaptureResult
-    fun close()
+    suspend fun prepare(request: CameraCaptureRequest): CameraSequencePreparationResult
+    suspend fun capture(frame: CameraCaptureFrame): CameraFrameCaptureResult
+    suspend fun close()
 }
 
 /**
@@ -41,7 +42,7 @@ interface CameraCaptureSequenceBackend {
 class CameraCaptureSequenceExecutor(
     private val outputAllocator: CaptureOutputAllocator,
 ) {
-    fun execute(
+    suspend fun execute(
         sequence: CameraCaptureSequence,
         backend: CameraCaptureSequenceBackend,
     ): CameraCaptureSequenceResult {
@@ -74,7 +75,7 @@ class CameraCaptureSequenceExecutor(
         }
     }
 
-    private fun captureFrames(
+    private suspend fun captureFrames(
         sequence: CameraCaptureSequence,
         backend: CameraCaptureSequenceBackend,
     ): CameraCaptureSequenceResult {
