@@ -9,6 +9,18 @@ import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.lifecycle.LifecycleOwner
 
+/** Validated physical-camera and JPEG-output request. */
+data class CameraXOutputBindingRequest(
+    val cameraId: String,
+    val width: Int,
+    val height: Int,
+) {
+    init {
+        require(cameraId.isNotBlank()) { "Camera id must not be blank." }
+        require(width > 0 && height > 0) { "Capture dimensions must be positive." }
+    }
+}
+
 /** Immutable result of binding the camera used by an automatic capture session. */
 data class CameraXOutputBinding(
     val camera: Camera,
@@ -26,18 +38,17 @@ class AndroidCameraXOutputBinder(
     private val lifecycleOwner: LifecycleOwner,
     private val previewSurfaceProvider: Preview.SurfaceProvider? = null,
 ) {
-    fun bind(cameraId: String, width: Int, height: Int): CameraXOutputBinding {
-        require(cameraId.isNotBlank()) { "Camera id must not be blank." }
-        require(width > 0 && height > 0) { "Capture dimensions must be positive." }
-
+    fun bind(request: CameraXOutputBindingRequest): CameraXOutputBinding {
         val selector = CameraSelector.Builder()
             .addCameraFilter { cameraInfos ->
                 cameraInfos.filter { cameraInfo ->
-                    Camera2CameraInfo.from(cameraInfo).cameraId == cameraId
+                    Camera2CameraInfo.from(cameraInfo).cameraId == request.cameraId
                 }
             }
             .build()
-        check(provider.hasCamera(selector)) { "Requested camera is unavailable: $cameraId" }
+        check(provider.hasCamera(selector)) {
+            "Requested camera is unavailable: ${request.cameraId}"
+        }
 
         val preview = previewSurfaceProvider?.let { surfaceProvider ->
             Preview.Builder().build().also { it.setSurfaceProvider(surfaceProvider) }
@@ -45,7 +56,7 @@ class AndroidCameraXOutputBinder(
         @Suppress("DEPRECATION")
         val imageCapture = ImageCapture.Builder()
             .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
-            .setTargetResolution(Size(width, height))
+            .setTargetResolution(Size(request.width, request.height))
             .build()
 
         provider.unbindAll()
