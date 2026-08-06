@@ -9,17 +9,30 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.IBinder
+import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.LifecycleRegistry
 import com.fatmambo33.eclipsecam.MainActivity
 import com.fatmambo33.eclipsecam.R
+import com.fatmambo33.eclipsecam.camera.capabilities.CameraCapabilityInventory
+import com.fatmambo33.eclipsecam.camera.capabilities.LensFacing
+import java.io.File
 
-class CaptureForegroundService : Service() {
+@ExperimentalCamera2Interop
+class CaptureForegroundService : Service(), LifecycleOwner {
+    private val lifecycleRegistry = LifecycleRegistry(this)
+    override val lifecycle: Lifecycle get() = lifecycleRegistry
+
     private var runtimeHost: CaptureForegroundServiceRuntimeHost? = null
     private var commandRouter: CaptureForegroundServiceCommandRouter? = null
 
     override fun onCreate() {
         super.onCreate()
+        lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_CREATE)
+        lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_START)
         createNotificationChannel()
         val host = createRuntimeHost()
         runtimeHost = host
@@ -40,17 +53,15 @@ class CaptureForegroundService : Service() {
         }
         val route = router.route(request)
         applyRoute(route)
-        return if (route is CaptureForegroundServiceRouteResult.Active) {
-            START_STICKY
-        } else {
-            START_NOT_STICKY
-        }
+        return if (route is CaptureForegroundServiceRouteResult.Active) START_STICKY else START_NOT_STICKY
     }
 
     override fun onDestroy() {
         commandRouter = null
         runtimeHost?.close()
         runtimeHost = null
+        lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_STOP)
+        lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY)
         super.onDestroy()
     }
 
@@ -58,11 +69,31 @@ class CaptureForegroundService : Service() {
 
     private fun createRuntimeHost(): CaptureForegroundServiceRuntimeHost {
         val recovery = CaptureServiceRecoveryBootstrap.fromFilesDirectory(filesDir)
+        val inventory = CameraCapabilityInventory(applicationContext)
+        val selectedCamera = {
+            inventory.readAll()
+                .asSequence()
+                .filter { it.facing == LensFacing.BACK }
+                .filter { it.jpegSizes.isNotEmpty() }
+                .maxByOrNull { camera -> camera.jpegSizes.first().pixelCount }
+                ?: error("No compatible rear JPEG camera capability is available.")
+        }
+        val backendFactory = CameraCaptureSequenceBackendFactory {
+            CameraXCaptureSequenceBackend(
+                AndroidCameraXCaptureControlPort(
+                    context = applicationContext,
+                    lifecycleOwner = this,
+                ),
+            )
+        }
+        val indexedFactory = ProductionIndexedCameraFactory(
+            outputRootDirectory = File(filesDir, "captures"),
+            selectedCamera = selectedCamera,
+            backendFactory = backendFactory,
+        )
         val sessionFactory = CaptureForegroundServiceSessionFactory(
             context = this,
-            indexedCameraFactory = CaptureIndexedCameraFactory {
-                error("Production CameraX capture dependencies are not configured.")
-            },
+            indexedCameraFactory = indexedFactory,
         )
         return CaptureForegroundServiceRuntimeHost(
             recoveryLoader = CaptureServiceRecoveryLoader(recovery::load),
@@ -72,8 +103,7 @@ class CaptureForegroundService : Service() {
 
     private fun applyRoute(result: CaptureForegroundServiceRouteResult) {
         when (result) {
-            is CaptureForegroundServiceRouteResult.Active ->
-                startForeground(NOTIFICATION_ID, buildNotification(result.state))
+            is CaptureForegroundServiceRouteResult.Active -> startForeground(NOTIFICATION_ID, buildNotification(result.state))
             CaptureForegroundServiceRouteResult.Stop -> stopCaptureService()
         }
     }
@@ -85,8 +115,7 @@ class CaptureForegroundService : Service() {
 
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
-        val manager = getSystemService(NotificationManager::class.java)
-        manager.createNotificationChannel(
+        getSystemService(NotificationManager::class.java).createNotificationChannel(
             NotificationChannel(
                 CHANNEL_ID,
                 getString(R.string.capture_notification_channel_name),
@@ -131,11 +160,7 @@ class CaptureForegroundService : Service() {
             .setOnlyAlertOnce(true)
             .setCategory(NotificationCompat.CATEGORY_SERVICE)
             .addAction(0, actionLabel, actionIntent)
-            .addAction(
-                0,
-                getString(R.string.capture_notification_stop),
-                servicePendingIntent(ACTION_STOP, 3),
-            )
+            .addAction(0, getString(R.string.capture_notification_stop), servicePendingIntent(ACTION_STOP, 3))
             .build()
     }
 
@@ -162,15 +187,11 @@ class CaptureForegroundService : Service() {
         }
 
         fun pause(context: Context) {
-            context.startService(
-                Intent(context, CaptureForegroundService::class.java).setAction(ACTION_PAUSE),
-            )
+            context.startService(Intent(context, CaptureForegroundService::class.java).setAction(ACTION_PAUSE))
         }
 
         fun stop(context: Context) {
-            context.startService(
-                Intent(context, CaptureForegroundService::class.java).setAction(ACTION_STOP),
-            )
+            context.startService(Intent(context, CaptureForegroundService::class.java).setAction(ACTION_STOP))
         }
     }
 }
