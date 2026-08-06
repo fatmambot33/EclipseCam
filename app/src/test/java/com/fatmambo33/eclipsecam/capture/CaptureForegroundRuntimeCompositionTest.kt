@@ -29,6 +29,7 @@ class CaptureForegroundRuntimeCompositionTest {
             nowUtc = captureAt.minusSeconds(60),
             checkpointStore = store,
         )
+        coordinator.start(captureAt.minusSeconds(45))
         coordinator.pause(captureAt.minusSeconds(30))
         val wakeups = RecordingWakeups()
         var captures = 0
