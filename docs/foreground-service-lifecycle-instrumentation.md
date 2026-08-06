@@ -23,6 +23,12 @@ The lifecycle test uses AndroidX Test's supported `ServiceTestRule` to start the
 
 Android CI compiles the instrumentation suite with `assembleDebugAndroidTest` while retaining the existing JVM tests, Android lint, and debug application build. Both the app APK and instrumentation APK are uploaded so the exact tested pair can be inspected or executed independently.
 
+The repository validation command is:
+
+```shell
+gradle --no-daemon testDebugUnitTest lintDebug assembleDebug assembleDebugAndroidTest
+```
+
 Compilation proves that the lifecycle contract remains wired to the real Android service and activity APIs. It does not prove runtime behavior on an emulator or physical phone.
 
 ## Remaining validation
