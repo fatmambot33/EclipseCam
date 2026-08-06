@@ -7,6 +7,7 @@ The format follows Keep a Changelog and Semantic Versioning.
 ## [Unreleased]
 
 ### Added
+- Lifecycle-safe replace-all capture wake-up controller with stale-callback invalidation and deterministic shutdown
 - Production composition boundary joining recovered capture plans, durable session state, camera execution, live health sampling, and wake-up scheduling
 - Permission-aware, local-only Android location repository
 - GPS provider, accuracy, altitude, capture time and staleness state
