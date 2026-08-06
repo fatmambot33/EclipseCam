@@ -1,5 +1,9 @@
 package com.fatmambo33.eclipsecam.capture
 
+import java.util.concurrent.CancellationException
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
+
 sealed interface CameraSequencePreparationResult {
     data object Ready : CameraSequencePreparationResult
     data class RecoverableFailure(val reason: String) : CameraSequencePreparationResult
@@ -35,9 +39,9 @@ interface CameraCaptureSequenceBackend {
  * Executes one pre-reserved capture sequence as an all-or-nothing local-media transaction.
  *
  * A successful sequence preserves every output for later indexing. Any preparation failure,
- * incomplete frame, backend exception or close failure releases every reserved output so Gallery
- * cannot discover a partial exposure bracket. Recoverable camera failures remain recoverable only
- * when output cleanup succeeds; cleanup uncertainty is always fatal.
+ * incomplete frame, backend exception, cancellation, or close failure releases every reserved
+ * output so Gallery cannot discover a partial exposure bracket. Cancellation is propagated after
+ * non-cancellable backend and output cleanup completes.
  */
 class CameraCaptureSequenceExecutor(
     private val outputAllocator: CaptureOutputAllocator,
@@ -54,6 +58,9 @@ class CameraCaptureSequenceExecutor(
                 is CameraSequencePreparationResult.FatalFailure ->
                     CameraCaptureSequenceResult.FatalFailure(preparation.reason)
             }
+        } catch (cancellation: CancellationException) {
+            cleanupCancellation(sequence, backend, cancellation)
+            throw cancellation
         } catch (error: RuntimeException) {
             CameraCaptureSequenceResult.FatalFailure(
                 error.message ?: "Camera sequence execution failed.",
@@ -62,6 +69,9 @@ class CameraCaptureSequenceExecutor(
 
         try {
             backend.close()
+        } catch (cancellation: CancellationException) {
+            cleanupCancellation(sequence, backend = null, cancellation)
+            throw cancellation
         } catch (error: RuntimeException) {
             result = CameraCaptureSequenceResult.FatalFailure(
                 error.message ?: "Camera sequence cleanup failed.",
@@ -89,6 +99,28 @@ class CameraCaptureSequenceExecutor(
             }
         }
         return CameraCaptureSequenceResult.Completed(sequence.frames.map { it.output })
+    }
+
+    private suspend fun cleanupCancellation(
+        sequence: CameraCaptureSequence,
+        backend: CameraCaptureSequenceBackend?,
+        cancellation: CancellationException,
+    ) = withContext(NonCancellable) {
+        if (backend != null) {
+            try {
+                backend.close()
+            } catch (error: RuntimeException) {
+                cancellation.addSuppressed(error)
+            }
+        }
+        val cleanupSucceeded = sequence.frames
+            .map { outputAllocator.release(it.output) }
+            .all { it }
+        if (!cleanupSucceeded) {
+            cancellation.addSuppressed(
+                IllegalStateException("Unable to clean cancelled camera sequence outputs."),
+            )
+        }
     }
 
     private fun cleanupFailedSequence(
