@@ -13,75 +13,72 @@ import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.fatmambo33.eclipsecam.MainActivity
 import com.fatmambo33.eclipsecam.R
-import java.time.Instant
 
 class CaptureForegroundService : Service() {
-    private var state = CaptureServiceState.IDLE
-    private var commandController: CaptureServiceCommandController? = null
+    private var runtimeHost: CaptureForegroundServiceRuntimeHost? = null
+    private var commandRouter: CaptureForegroundServiceCommandRouter? = null
 
     override fun onCreate() {
         super.onCreate()
         createNotificationChannel()
-        when (val recovery = CaptureServiceRecoveryBootstrap.fromFilesDirectory(filesDir).load()) {
-            is CaptureServiceBootstrapResult.Ready -> {
-                commandController = CaptureServiceCommandController(
-                    coordinator = recovery.coordinator,
-                    initialState = recovery.initialState,
-                ).also { controller ->
-                    controller.normalizeRecoveredSession(Instant.now())
-                    state = controller.state
-                }
-            }
-
-            CaptureServiceBootstrapResult.Missing,
-            is CaptureServiceBootstrapResult.Rejected,
-            -> {
-                state = CaptureServiceState.IDLE
-                commandController = null
-            }
-        }
+        val host = createRuntimeHost()
+        runtimeHost = host
+        commandRouter = CaptureForegroundServiceCommandRouter(host)
+        applyRoute(commandRouter?.initialize() ?: CaptureForegroundServiceRouteResult.Stop)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        val controller = commandController
-        if (intent?.action == ACTION_STOP) {
-            controller?.command(CaptureServiceCommand.STOP, Instant.now())
+        val router = commandRouter ?: run {
             stopCaptureService()
             return START_NOT_STICKY
         }
-        if (controller == null) {
-            stopSelf()
-            return START_NOT_STICKY
+        val request = when (intent?.action) {
+            null -> CaptureForegroundServiceRequest.STICKY_RESTART
+            ACTION_PAUSE -> CaptureForegroundServiceRequest.PAUSE
+            ACTION_STOP -> CaptureForegroundServiceRequest.STOP
+            else -> CaptureForegroundServiceRequest.START
         }
+        val route = router.route(request)
+        applyRoute(route)
+        return if (route is CaptureForegroundServiceRouteResult.Active) {
+            START_STICKY
+        } else {
+            START_NOT_STICKY
+        }
+    }
 
-        // A sticky restart has no explicit user command. Recovery normalization has already persisted
-        // a paused checkpoint, so camera work cannot restart silently after process recreation.
-        if (intent == null) {
-            state = controller.state
-            startForeground(NOTIFICATION_ID, buildNotification(state))
-            return START_STICKY
-        }
-
-        val command = when (intent.action) {
-            ACTION_PAUSE -> CaptureServiceCommand.PAUSE
-            else -> CaptureServiceCommand.START
-        }
-        controller.command(command, Instant.now())
-        state = controller.state
-        when (state) {
-            CaptureServiceState.RUNNING,
-            CaptureServiceState.PAUSED -> startForeground(NOTIFICATION_ID, buildNotification(state))
-
-            CaptureServiceState.STOPPED -> stopCaptureService()
-            CaptureServiceState.IDLE -> Unit
-        }
-        return START_STICKY
+    override fun onDestroy() {
+        commandRouter = null
+        runtimeHost?.close()
+        runtimeHost = null
+        super.onDestroy()
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
 
+    private fun createRuntimeHost(): CaptureForegroundServiceRuntimeHost {
+        val recovery = CaptureServiceRecoveryBootstrap.fromFilesDirectory(filesDir)
+        val sessionFactory = CaptureForegroundServiceSessionFactory(
+            context = this,
+            indexedCameraFactory = CaptureIndexedCameraFactory {
+                error("Production CameraX capture dependencies are not configured.")
+            },
+        )
+        return CaptureForegroundServiceRuntimeHost(
+            recoveryLoader = CaptureServiceRecoveryLoader(recovery::load),
+            sessionCreator = CaptureRuntimeSessionCreator(sessionFactory::create),
+        )
+    }
+
+    private fun applyRoute(result: CaptureForegroundServiceRouteResult) {
+        when (result) {
+            is CaptureForegroundServiceRouteResult.Active ->
+                startForeground(NOTIFICATION_ID, buildNotification(result.state))
+            CaptureForegroundServiceRouteResult.Stop -> stopCaptureService()
+        }
+    }
+
     private fun stopCaptureService() {
-        state = CaptureServiceState.STOPPED
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
     }

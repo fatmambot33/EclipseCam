@@ -7,6 +7,7 @@ The format follows Keep a Changelog and Semantic Versioning.
 ## [Unreleased]
 
 ### Added
+- Foreground capture service routing through the recovered runtime host with fail-closed startup and deterministic destruction cleanup
 - Fail-closed durable instruction-index bridge from the foreground runtime to the suspending CameraX sequence pipeline
 - Lifecycle-safe replace-all capture wake-up controller with stale-callback invalidation and deterministic shutdown
 - Production composition boundary joining recovered capture plans, durable session state, camera execution, live health sampling, and wake-up scheduling
