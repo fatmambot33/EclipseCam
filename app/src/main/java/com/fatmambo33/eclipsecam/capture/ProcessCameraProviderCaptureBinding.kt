@@ -86,7 +86,9 @@ class ProcessCameraProviderCaptureBindingPort(
             .setTargetResolution(Size(request.width, request.height))
             .build()
 
-        imageCapture?.let(cameraProvider::unbind)
+        imageCapture?.let { previousCapture ->
+            cameraProvider.unbind(previousCapture)
+        }
         val camera = cameraProvider.bindToLifecycle(lifecycleOwner, selector, capture)
         provider = cameraProvider
         imageCapture = capture
