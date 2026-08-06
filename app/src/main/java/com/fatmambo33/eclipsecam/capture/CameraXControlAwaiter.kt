@@ -2,9 +2,9 @@ package com.fatmambo33.eclipsecam.capture
 
 import androidx.camera.core.CameraControl
 import com.google.common.util.concurrent.ListenableFuture
-import com.google.common.util.concurrent.MoreExecutors
 import java.util.concurrent.CancellationException
 import java.util.concurrent.ExecutionException
+import java.util.concurrent.Executor
 import kotlin.coroutines.resume
 import kotlinx.coroutines.suspendCancellableCoroutine
 
@@ -37,7 +37,7 @@ class CameraXControlAwaiter {
                 }
                 if (continuation.isActive) continuation.resume(result)
             },
-            MoreExecutors.directExecutor(),
+            DIRECT_EXECUTOR,
         )
         continuation.invokeOnCancellation { future.cancel(true) }
     }
@@ -67,5 +67,9 @@ class CameraXControlAwaiter {
     ): String {
         val detail = error.message?.trim().orEmpty().ifBlank { fallback }
         return "$operation: $detail"
+    }
+
+    private companion object {
+        val DIRECT_EXECUTOR = Executor { command -> command.run() }
     }
 }
