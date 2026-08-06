@@ -60,6 +60,7 @@ The format follows Keep a Changelog and Semantic Versioning.
 - Whole-bracket output cleanup after preparation, frame, backend, or close failures
 - CameraX callback error adaptation into stable recoverable and fatal capture outcomes
 - Fail-closed handling for unknown future CameraX image-capture error codes
+- CameraX sequence backend coordinating camera binding, focus, metering, white-balance lock, exposure controls, JPEG callbacks, and control restoration
 
 ### Changed
 - Updated the embedded 12 August 2026 model from the older 2014 NASA element set to the current NASA/GSFC dataset using delta T 75.4 seconds and greatest eclipse at 17:45:51 UTC
