@@ -6,13 +6,16 @@ import androidx.camera.core.ImageCaptureException
 /** Converts CameraX callback failures into the stable transactional capture result contract. */
 object CameraXCaptureFailureAdapter {
     fun classify(exception: ImageCaptureException): CameraFrameCaptureResult =
+        classify(exception.imageCaptureError, exception.message)
+
+    fun classify(errorCode: Int, message: String?): CameraFrameCaptureResult =
         CameraCaptureFailurePolicy.classify(
-            kind = exception.toFailureKind(),
-            message = exception.message,
+            kind = errorCode.toFailureKind(),
+            message = message,
         )
 
-    private fun ImageCaptureException.toFailureKind(): CameraCaptureFailureKind =
-        when (imageCaptureError) {
+    private fun Int.toFailureKind(): CameraCaptureFailureKind =
+        when (this) {
             ImageCapture.ERROR_CAMERA_CLOSED -> CameraCaptureFailureKind.CAMERA_CLOSED
             ImageCapture.ERROR_FILE_IO -> CameraCaptureFailureKind.FILE_IO
             ImageCapture.ERROR_CAPTURE_FAILED -> CameraCaptureFailureKind.CAPTURE_FAILED
