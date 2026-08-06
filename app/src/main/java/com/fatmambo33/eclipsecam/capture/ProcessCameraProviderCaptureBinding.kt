@@ -60,7 +60,7 @@ object ExactCameraIdMatcher {
  * lens. It binds only ImageCapture at the validated JPEG size and fails closed when the provider,
  * exact camera id, or lifecycle binding is unavailable.
  */
-@OptIn(ExperimentalCamera2Interop::class)
+@ExperimentalCamera2Interop
 class ProcessCameraProviderCaptureBindingPort(
     context: Context,
     private val lifecycleOwner: LifecycleOwner,
