@@ -34,7 +34,7 @@ data class CameraXOutputBinding(
  * The previous use cases are removed before binding so preview and capture never point at different
  * cameras. A failed request leaves no partially bound automatic-capture pipeline.
  */
-@OptIn(ExperimentalCamera2Interop::class)
+@ExperimentalCamera2Interop
 class AndroidCameraXOutputBinder(
     private val provider: ProcessCameraProvider,
     private val lifecycleOwner: LifecycleOwner,
