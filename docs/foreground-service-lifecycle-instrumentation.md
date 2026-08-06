@@ -15,6 +15,10 @@ The Android instrumentation suite now exercises `CaptureForegroundService` throu
 
 The composition override is internal, empty by default, and used only by instrumentation. Production continues to construct the exact CameraX dependency graph from app-private recovery state.
 
+## Test harness
+
+The lifecycle test uses AndroidX Test's supported `ServiceTestRule` to start the real foreground service and captures the created service instance only through the instrumentation composition seam. Sticky restart is invoked on the Android main thread, matching the service lifecycle contract without relying on unsupported scenario APIs.
+
 ## Repository validation
 
 Android CI compiles the instrumentation suite with `assembleDebugAndroidTest` while retaining the existing JVM tests, Android lint, and debug application build. Both the app APK and instrumentation APK are uploaded so the exact tested pair can be inspected or executed independently.
