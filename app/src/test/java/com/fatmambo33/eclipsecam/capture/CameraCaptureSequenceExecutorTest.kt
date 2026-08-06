@@ -2,15 +2,17 @@ package com.fatmambo33.eclipsecam.capture
 
 import com.fatmambo33.eclipsecam.camera.capabilities.CameraOutputSize
 import java.io.File
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.yield
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class CameraCaptureSequenceExecutorTest {
     @Test
-    fun capturesEveryFrameInOrderAndPreservesOutputs() {
+    fun capturesEveryFrameInOrderAndPreservesOutputs() = runBlocking {
         val allocator = RecordingAllocator()
-        val backend = RecordingBackend()
+        val backend = RecordingBackend(yieldBeforeResult = true)
         val sequence = sequence()
 
         val result = CameraCaptureSequenceExecutor(allocator).execute(sequence, backend)
@@ -22,7 +24,7 @@ class CameraCaptureSequenceExecutorTest {
     }
 
     @Test
-    fun recoverableFrameFailureStopsSequenceAndReleasesWholeBracket() {
+    fun recoverableFrameFailureStopsSequenceAndReleasesWholeBracket() = runBlocking {
         val allocator = RecordingAllocator()
         val backend = RecordingBackend(
             frameResults = mutableListOf(
@@ -44,7 +46,7 @@ class CameraCaptureSequenceExecutorTest {
     }
 
     @Test
-    fun fatalPreparationFailureDoesNotCaptureAndReleasesOutputs() {
+    fun fatalPreparationFailureDoesNotCaptureAndReleasesOutputs() = runBlocking {
         val allocator = RecordingAllocator()
         val backend = RecordingBackend(
             preparation = CameraSequencePreparationResult.FatalFailure("Unsupported camera state"),
@@ -63,7 +65,7 @@ class CameraCaptureSequenceExecutorTest {
     }
 
     @Test
-    fun backendExceptionIsFatalAndReleasesOutputs() {
+    fun backendExceptionIsFatalAndReleasesOutputs() = runBlocking {
         val allocator = RecordingAllocator()
         val backend = RecordingBackend(throwOnOrdinal = 1)
         val sequence = sequence()
@@ -76,7 +78,7 @@ class CameraCaptureSequenceExecutorTest {
     }
 
     @Test
-    fun closeFailureInvalidatesOtherwiseCompleteSequence() {
+    fun closeFailureInvalidatesOtherwiseCompleteSequence() = runBlocking {
         val allocator = RecordingAllocator()
         val backend = RecordingBackend(throwOnClose = true)
         val sequence = sequence()
@@ -88,7 +90,7 @@ class CameraCaptureSequenceExecutorTest {
     }
 
     @Test
-    fun cleanupFailurePromotesRecoverableFailureToFatal() {
+    fun cleanupFailurePromotesRecoverableFailureToFatal() = runBlocking {
         val allocator = RecordingAllocator(releaseSucceeds = false)
         val backend = RecordingBackend(
             preparation = CameraSequencePreparationResult.RecoverableFailure("Camera busy"),
@@ -150,13 +152,20 @@ class CameraCaptureSequenceExecutorTest {
         private val frameResults: MutableList<CameraFrameCaptureResult> = mutableListOf(),
         private val throwOnOrdinal: Int? = null,
         private val throwOnClose: Boolean = false,
+        private val yieldBeforeResult: Boolean = false,
     ) : CameraCaptureSequenceBackend {
         val capturedOrdinals = mutableListOf<Int>()
         var closeCount = 0
 
-        override fun prepare(request: CameraCaptureRequest): CameraSequencePreparationResult = preparation
+        override suspend fun prepare(
+            request: CameraCaptureRequest,
+        ): CameraSequencePreparationResult {
+            if (yieldBeforeResult) yield()
+            return preparation
+        }
 
-        override fun capture(frame: CameraCaptureFrame): CameraFrameCaptureResult {
+        override suspend fun capture(frame: CameraCaptureFrame): CameraFrameCaptureResult {
+            if (yieldBeforeResult) yield()
             capturedOrdinals += frame.ordinal
             if (frame.ordinal == throwOnOrdinal) error("camera exploded")
             return if (frameResults.isEmpty()) {
@@ -166,7 +175,8 @@ class CameraCaptureSequenceExecutorTest {
             }
         }
 
-        override fun close() {
+        override suspend fun close() {
+            if (yieldBeforeResult) yield()
             closeCount += 1
             if (throwOnClose) error("close failed")
         }
