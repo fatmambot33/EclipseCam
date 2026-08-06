@@ -91,7 +91,10 @@ class CameraXCaptureSequenceBackendTest {
         return CameraCaptureFrame(
             ordinal = 0,
             exposure = exposure,
-            output = CaptureOutput(imageFile = file),
+            output = CaptureOutput(
+                sessionDirectory = file.parentFile,
+                imageFile = file,
+            ),
         )
     }
 
