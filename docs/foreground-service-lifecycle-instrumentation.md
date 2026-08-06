@@ -15,6 +15,12 @@ The Android instrumentation suite now exercises `CaptureForegroundService` throu
 
 The composition override is internal, empty by default, and used only by instrumentation. Production continues to construct the exact CameraX dependency graph from app-private recovery state.
 
+## Repository validation
+
+Android CI compiles the instrumentation suite with `assembleDebugAndroidTest` while retaining the existing JVM tests, Android lint, and debug application build. Both the app APK and instrumentation APK are uploaded so the exact tested pair can be inspected or executed independently.
+
+Compilation proves that the lifecycle contract remains wired to the real Android service and activity APIs. It does not prove runtime behavior on an emulator or physical phone.
+
 ## Remaining validation
 
-This suite is compiled by Android CI. Executing it on a pinned CI emulator is tracked by issue #92. Screen-off, process-death, intended-duration, battery, thermal, storage, interruption, and all-rear-lens validation on the physical Pixel 7 Pro remain release gates.
+Executing the suite on a pinned CI emulator is tracked by issue #92. Screen-off, process-death, intended-duration, battery, thermal, storage, interruption, and all-rear-lens validation on the physical Pixel 7 Pro remain release gates.
