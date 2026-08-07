@@ -45,10 +45,11 @@ class Media3TimelapseVideoEncoder(
     private val frameRate: Int = DEFAULT_FRAME_RATE,
 ) : TimelapseVideoEncoder {
     private val applicationContext = context.applicationContext
-    private val frameDurationMs = 1_000L / frameRate
+    private val frameDurationMs: Long
 
     init {
         require(frameRate in 1..60) { "Timelapse frame rate must be between 1 and 60 fps." }
+        frameDurationMs = 1_000L / frameRate
     }
 
     override suspend fun encode(
