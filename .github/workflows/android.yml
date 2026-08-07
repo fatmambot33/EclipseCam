@@ -95,20 +95,9 @@ jobs:
           target: google_apis
           arch: x86_64
           profile: pixel_7
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-metrics -camera-back virtualscene
           disable-animations: true
-          script: |
-            mkdir -p build/instrumentation-evidence
-            adb logcat -c
-            status=0
-            gradle --no-daemon connectedDebugAndroidTest || status=$?
-            adb logcat -d > build/instrumentation-evidence/logcat.txt || true
-            if [ "$status" -ne 0 ]; then
-              adb exec-out screencap -p > build/instrumentation-evidence/failure-screen.png || true
-              adb shell dumpsys activity > build/instrumentation-evidence/activity.txt || true
-              adb shell dumpsys notification > build/instrumentation-evidence/notifications.txt || true
-            fi
-            exit "$status"
+          script: bash .github/scripts/run-android-instrumentation.sh
 
       - name: Upload instrumentation evidence
         if: always()
