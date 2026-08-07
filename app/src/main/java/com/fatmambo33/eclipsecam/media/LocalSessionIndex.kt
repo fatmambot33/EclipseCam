@@ -27,6 +27,8 @@ data class LocalSessionAsset(
     val sizeBytes: Long,
     val modifiedAtUtc: Instant,
     val kind: LocalSessionAssetKind = LocalSessionAssetKind.ORIGINAL_CAPTURE,
+    val phase: CapturePhase? = null,
+    val instructionIndex: Int? = null,
 )
 
 /** A locally stored capture session, including interrupted or incomplete output. */
@@ -160,10 +162,19 @@ class LocalSessionIndex(
         val sessionId = directory.name.trim()
         if (sessionId.isBlank()) return null
 
+        val planMetadata = readPlanMetadata(directory)
+        val stateMetadata = readStateMetadata(directory)
         val originalAssets = directory.listFiles()
             ?.asSequence()
             ?.filter(::isReadableJpeg)
-            ?.map { it.toAsset(LocalSessionAssetKind.ORIGINAL_CAPTURE) }
+            ?.map { file ->
+                val instructionIndex = captureInstructionIndex(file.name)
+                file.toAsset(
+                    kind = LocalSessionAssetKind.ORIGINAL_CAPTURE,
+                    phase = instructionIndex?.let { planMetadata?.instructionPhases?.get(it) },
+                    instructionIndex = instructionIndex,
+                )
+            }
             ?.sortedBy { it.file.name }
             ?.toList()
             .orEmpty()
@@ -171,15 +182,13 @@ class LocalSessionIndex(
             ?.asSequence()
             ?.filter { it.isFile && it.length() > 0L }
             ?.mapNotNull { file ->
-                generatedKind(file)?.let { kind -> file.toAsset(kind) }
+                generatedKind(file)?.let { kind -> file.toAsset(kind = kind) }
             }
             ?.sortedBy { it.file.name }
             ?.toList()
             .orEmpty()
         val assets = originalAssets + generatedAssets
 
-        val planMetadata = readPlanMetadata(directory)
-        val stateMetadata = readStateMetadata(directory)
         val directoryModifiedAt = Instant.ofEpochMilli(directory.lastModified())
         val capturedAtUtc = planMetadata?.startsAtUtc
             ?: originalAssets.minOfOrNull(LocalSessionAsset::modifiedAtUtc)
@@ -197,10 +206,7 @@ class LocalSessionIndex(
                 LocalSessionStatus.INTERRUPTED
             }
         val phaseCounts = originalAssets
-            .mapNotNull { asset ->
-                captureInstructionIndex(asset.file.name)
-                    ?.let { index -> planMetadata?.instructionPhases?.get(index) }
-            }
+            .mapNotNull(LocalSessionAsset::phase)
             .groupingBy { it }
             .eachCount()
             .toSortedMap(compareBy(CapturePhase::ordinal))
@@ -275,11 +281,17 @@ class LocalSessionIndex(
         else -> null
     }
 
-    private fun File.toAsset(kind: LocalSessionAssetKind): LocalSessionAsset = LocalSessionAsset(
+    private fun File.toAsset(
+        kind: LocalSessionAssetKind,
+        phase: CapturePhase? = null,
+        instructionIndex: Int? = null,
+    ): LocalSessionAsset = LocalSessionAsset(
         file = this,
         sizeBytes = length(),
         modifiedAtUtc = Instant.ofEpochMilli(lastModified()),
         kind = kind,
+        phase = phase,
+        instructionIndex = instructionIndex,
     )
 
     private fun captureInstructionIndex(filename: String): Int? =
