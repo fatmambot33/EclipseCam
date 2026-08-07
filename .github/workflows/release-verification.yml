@@ -48,11 +48,6 @@ jobs:
         run: python3 .github/scripts/audit-privacy.py
 
       - name: Test, lint and build unsigned release AAB
-        env:
-          ECLIPSE_CAM_STORE_FILE: ''
-          ECLIPSE_CAM_STORE_PASSWORD: ''
-          ECLIPSE_CAM_KEY_ALIAS: ''
-          ECLIPSE_CAM_KEY_PASSWORD: ''
         run: gradle --no-daemon testDebugUnitTest lintRelease bundleRelease
 
       - name: Inspect unsigned release artifact
