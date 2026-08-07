@@ -120,6 +120,17 @@ def gradle_value(text: str, key: str) -> str:
     return match.group(1) or match.group(2)
 
 
+def provider_default(text: str, variable: str) -> str:
+    match = re.search(
+        rf"val\s+{re.escape(variable)}\s*=.*?\.orElse\(\"([^\"]+)\"\)",
+        text,
+        flags=re.DOTALL,
+    )
+    if not match:
+        raise ValueError(f"could not resolve default for {variable} from app/build.gradle.kts")
+    return match.group(1)
+
+
 def inspect_artifact(aab: pathlib.Path) -> None:
     if not aab.is_file():
         raise SystemExit(f"release-verification: ERROR: AAB not found: {aab}")
@@ -132,6 +143,7 @@ def inspect_artifact(aab: pathlib.Path) -> None:
         if f"{ANDROID_NS}name" in node.attrib
     )
 
+    EVIDENCE_DIR.mkdir(parents=True, exist_ok=True)
     with zipfile.ZipFile(aab) as archive:
         names = archive.namelist()
         signature_entries = [
@@ -159,8 +171,8 @@ def inspect_artifact(aab: pathlib.Path) -> None:
         "minSdk": int(gradle_value(gradle, "minSdk")),
         "targetSdk": int(gradle_value(gradle, "targetSdk")),
         "compileSdk": int(gradle_value(gradle, "compileSdk")),
-        "defaultVersionCode": 1,
-        "defaultVersionName": "0.0.1",
+        "defaultVersionCode": int(provider_default(gradle, "ciVersionCode")),
+        "defaultVersionName": provider_default(gradle, "ciVersionName"),
         "permissions": permissions,
         "signed": False,
         "verificationMode": "credential-free unsigned release",
@@ -173,6 +185,8 @@ def inspect_artifact(aab: pathlib.Path) -> None:
         handle.write(f"release_aab_bytes={metadata['bytes']}\n")
         handle.write("release_aab_signature=unsigned-as-required\n")
         handle.write(f"application_id={metadata['applicationId']}\n")
+        handle.write(f"version_code={metadata['defaultVersionCode']}\n")
+        handle.write(f"version_name={metadata['defaultVersionName']}\n")
         handle.write(f"min_sdk={metadata['minSdk']}\n")
         handle.write(f"target_sdk={metadata['targetSdk']}\n")
         handle.write(f"compile_sdk={metadata['compileSdk']}\n")
@@ -184,11 +198,17 @@ def self_test() -> None:
     assert forbidden_path_reason(pathlib.Path("upload.jks")) is not None
     assert forbidden_path_reason(pathlib.Path("secrets/service_account.json")) is not None
     assert forbidden_path_reason(pathlib.Path("docs/release.md")) is None
-    assert secret_findings("-----BEGIN PRIVATE KEY-----") == ["private-key"]
+    private_key_sample = "-----BEGIN " + "PRIVATE KEY-----"
+    assert secret_findings(private_key_sample) == ["private-key"]
     assert "google-api-key" in secret_findings("AIza" + "A" * 35)
-    service_account = '{"type":"service_account","private_key":"placeholder"}'
+    service_account = json.dumps(
+        {"type": "service_" + "account", "private_" + "key": "placeholder"}
+    )
     assert "google-service-account-private-key" in secret_findings(service_account)
     assert secret_findings("PLAY_SERVICE_ACCOUNT_JSON=${{ secrets.VALUE }}") == []
+    gradle_sample = 'val ciVersionCode = provider.orElse("42")\nval ciVersionName = provider.orElse("1.2.3")'
+    assert provider_default(gradle_sample, "ciVersionCode") == "42"
+    assert provider_default(gradle_sample, "ciVersionName") == "1.2.3"
     print("release-verification self-test: PASS")
 
 
