@@ -48,6 +48,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.fatmambo33.eclipsecam.camera.preview.CameraPreviewState
@@ -101,6 +102,7 @@ private fun EclipseCamApp() {
                         onClick = { selectedTab = tab },
                         icon = { Icon(tab.icon, contentDescription = tab.label) },
                         label = { Text(tab.label) },
+                        modifier = Modifier.testTag("tab-${tab.name.lowercase()}"),
                     )
                 }
             }
