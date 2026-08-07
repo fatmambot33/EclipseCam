@@ -1,5 +1,3 @@
-@file:OptIn(androidx.media3.common.util.UnstableApi::class)
-
 package com.fatmambo33.eclipsecam.media
 
 import android.content.Context
@@ -9,6 +7,7 @@ import android.os.Handler
 import android.os.Looper
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MimeTypes
+import androidx.media3.common.util.UnstableApi
 import androidx.media3.transformer.Composition
 import androidx.media3.transformer.EditedMediaItem
 import androidx.media3.transformer.EditedMediaItemSequence
@@ -40,6 +39,7 @@ class AndroidJpegTimelapseFrameProbe : TimelapseFrameProbe {
  * composition, scaling and hardware/software video encoding off the application thread while its
  * control surface remains on the main looper as required by Transformer.
  */
+@UnstableApi
 class Media3TimelapseVideoEncoder(
     context: Context,
     private val frameRate: Int = DEFAULT_FRAME_RATE,
