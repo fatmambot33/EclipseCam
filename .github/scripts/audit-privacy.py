@@ -44,8 +44,13 @@ BANNED_NETWORK_CLIENT_MARKERS = {
     "ktor.client",
 }
 
-ALLOWED_URL_LITERAL_FILES = {
+# These files contain scheme-validation literals only. Adding a concrete endpoint
+# anywhere in production source still requires an explicit privacy-audit review.
+REVIEWED_URL_CONTRACT_FILES = {
     pathlib.Path("app/src/main/java/com/fatmambo33/eclipsecam/map/MapArchitecture.kt"),
+    pathlib.Path(
+        "app/src/main/java/com/fatmambo33/eclipsecam/map/offline/OfflinePackManifest.kt"
+    ),
 }
 
 
@@ -98,7 +103,7 @@ def main() -> None:
         relative = path.relative_to(ROOT)
         if url_pattern.search(text):
             url_literal_files.append(str(relative))
-            if relative not in ALLOWED_URL_LITERAL_FILES:
+            if relative not in REVIEWED_URL_CONTRACT_FILES:
                 errors.append(f"unreviewed runtime URL literal in {relative}")
         if any(marker in text for marker in BANNED_NETWORK_CLIENT_MARKERS):
             network_client_files.append(str(relative))
