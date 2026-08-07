@@ -44,7 +44,10 @@ class AndroidLocalMediaExportInstrumentationTest {
         val source = File(root, "capture.jpg")
         writeJpeg(source, Color.RED)
         ExifInterface(source.absolutePath).apply {
-            setLatLong(48.123, -1.456)
+            setAttribute(ExifInterface.TAG_GPS_LATITUDE, "48/1,7/1,228/10")
+            setAttribute(ExifInterface.TAG_GPS_LATITUDE_REF, "N")
+            setAttribute(ExifInterface.TAG_GPS_LONGITUDE, "1/1,27/1,216/10")
+            setAttribute(ExifInterface.TAG_GPS_LONGITUDE_REF, "W")
             setAttribute(ExifInterface.TAG_DATETIME, "2026:08:12 17:00:00")
             saveAttributes()
         }
