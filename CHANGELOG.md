@@ -7,6 +7,7 @@ The format follows Keep a Changelog and Semantic Versioning.
 ## [Unreleased]
 
 ### Added
+- CI-enforced runtime privacy and Data Safety evidence covering permissions, local data flows, explicit sharing, network boundaries, and analytics/tracking exclusions
 - Foreground capture service routing through the recovered runtime host with fail-closed startup and deterministic destruction cleanup
 - Fail-closed durable instruction-index bridge from the foreground runtime to the suspending CameraX sequence pipeline
 - Lifecycle-safe replace-all capture wake-up controller with stale-callback invalidation and deterministic shutdown

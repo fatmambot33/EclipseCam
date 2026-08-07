@@ -38,6 +38,9 @@ jobs:
       - name: Install Android SDK 36
         run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
 
+      - name: Audit runtime privacy and Data Safety evidence
+        run: python3 .github/scripts/audit-privacy.py
+
       - name: Test, lint and build debug APKs
         env:
           MAPS_API_KEY: ${{ secrets.MAPS_API_KEY }}
@@ -53,12 +56,14 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-      - name: Upload lint report
+      - name: Upload lint and privacy evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: EclipseCam-lint-${{ github.run_number }}
-          path: app/build/reports/lint-results-debug.*
+          name: EclipseCam-validation-${{ github.run_number }}
+          path: |
+            app/build/reports/lint-results-debug.*
+            build/privacy-audit/evidence.txt
           if-no-files-found: ignore
           retention-days: 14
 
