@@ -129,7 +129,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    environment: ${{ env.RELEASE_TRACK == 'production' && 'google-play-production' || 'google-play-testing' }}
+    environment: ${{ github.event_name == 'workflow_dispatch' && inputs.track == 'production' && 'google-play-production' || 'google-play-testing' }}
 
     steps:
       - uses: actions/checkout@v4
