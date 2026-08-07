@@ -1,6 +1,8 @@
 package com.fatmambo33.eclipsecam.capture
 
 import android.content.Context
+import com.fatmambo33.eclipsecam.media.FileLocalCaptureSessionJournal
+import java.io.File
 import java.time.Instant
 
 fun interface CaptureIndexedCameraFactory {
@@ -28,6 +30,7 @@ class CaptureForegroundServiceSessionFactory(
     private val schedulerFactory: CaptureWakeupSchedulerFactory =
         CaptureWakeupSchedulerFactory(::ExecutorCaptureWakeupTaskScheduler),
     private val nowUtc: () -> Instant = Instant::now,
+    private val sessionJournal: CaptureSessionJournal = CaptureSessionJournal { _, _ -> },
 ) {
     constructor(
         context: Context,
@@ -42,6 +45,9 @@ class CaptureForegroundServiceSessionFactory(
         },
         schedulerFactory = schedulerFactory,
         nowUtc = nowUtc,
+        sessionJournal = FileLocalCaptureSessionJournal(
+            File(context.applicationContext.filesDir, CAPTURE_OUTPUT_DIRECTORY),
+        ),
     )
 
     fun create(recovery: CaptureServiceBootstrapResult.Ready): CaptureForegroundServiceSession {
@@ -56,6 +62,11 @@ class CaptureForegroundServiceSessionFactory(
             healthProvider = healthProviderFactory.create(),
             nowUtc = nowUtc,
             scheduler = schedulerFactory.create(),
+            sessionJournal = sessionJournal,
         )
+    }
+
+    private companion object {
+        const val CAPTURE_OUTPUT_DIRECTORY = "captures"
     }
 }
