@@ -19,8 +19,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Collections
@@ -45,10 +47,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.clearAndSetSemantics
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.fatmambo33.eclipsecam.camera.preview.CameraPreviewState
@@ -100,7 +105,7 @@ private fun EclipseCamApp() {
                     NavigationBarItem(
                         selected = selectedTab == tab,
                         onClick = { selectedTab = tab },
-                        icon = { Icon(tab.icon, contentDescription = tab.label) },
+                        icon = { Icon(tab.icon, contentDescription = null) },
                         label = { Text(tab.label) },
                         modifier = Modifier.testTag("tab-${tab.name.lowercase()}"),
                     )
@@ -142,6 +147,7 @@ private fun CameraScreen() {
             previewTitle(previewState),
             previewMessage(previewState),
             if (previewState is CameraPreviewState.Streaming) EclipseReady else EclipseWarning,
+            if (previewState is CameraPreviewState.Streaming) "Ready" else "Needs attention",
         )
         Spacer(Modifier.height(16.dp))
         Card(
@@ -168,10 +174,14 @@ private fun CameraScreen() {
         if (!cameraGranted) {
             Button(
                 onClick = { cameraPermission.launch(Manifest.permission.CAMERA) },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().testTag("camera-primary-action"),
             ) { Text("Enable camera") }
         } else {
-            Button(onClick = {}, enabled = false, modifier = Modifier.fillMaxWidth()) {
+            Button(
+                onClick = {},
+                enabled = false,
+                modifier = Modifier.fillMaxWidth().testTag("camera-primary-action"),
+            ) {
                 Text("Automatic capture not armed")
             }
         }
@@ -231,6 +241,7 @@ private fun LiveScreen() {
                 formatDuration(remaining)
             },
             EclipseAccent,
+            "Reference countdown",
         )
         Spacer(Modifier.height(16.dp))
         InfoCard(
@@ -267,6 +278,7 @@ private fun PositionScreen() {
                 "Allow location so EclipseCam can tell you where to stand and how much totality you can gain by moving."
             },
             if (locationGranted) EclipseReady else EclipseWarning,
+            if (locationGranted) "Ready" else "Action required",
         )
         Spacer(Modifier.height(16.dp))
         if (!locationGranted) {
@@ -279,7 +291,7 @@ private fun PositionScreen() {
                         ),
                     )
                 },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().testTag("position-primary-action"),
             ) { Text("Enable location") }
         }
         Spacer(Modifier.height(12.dp))
@@ -298,7 +310,10 @@ private fun GalleryScreen() {
 @Composable
 private fun ScreenColumn(title: String, content: @Composable ColumnScope.() -> Unit) {
     Column(
-        modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 18.dp),
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 20.dp, vertical = 18.dp),
     ) {
         Text("EclipseCam", style = MaterialTheme.typography.labelLarge, color = EclipseAccent)
         Text(
@@ -312,15 +327,28 @@ private fun ScreenColumn(title: String, content: @Composable ColumnScope.() -> U
 }
 
 @Composable
-private fun HeroCard(title: String, message: String, statusColor: Color) {
+private fun HeroCard(
+    title: String,
+    message: String,
+    statusColor: Color,
+    statusDescription: String,
+) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .testTag("hero-status")
+            .semantics { stateDescription = statusDescription },
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = EclipseCard),
     ) {
         Column(Modifier.padding(22.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.size(12.dp).background(statusColor, CircleShape))
+                Box(
+                    Modifier
+                        .size(12.dp)
+                        .background(statusColor, CircleShape)
+                        .clearAndSetSemantics {},
+                )
                 Spacer(Modifier.width(10.dp))
                 Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
             }
@@ -332,10 +360,18 @@ private fun HeroCard(title: String, message: String, statusColor: Color) {
 @Composable
 private fun ReadinessRow(label: String, ready: Boolean, detail: String) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp)
+            .semantics { stateDescription = if (ready) "Ready" else "Needs attention" },
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(Modifier.size(10.dp).background(if (ready) EclipseReady else EclipseWarning, CircleShape))
+        Box(
+            Modifier
+                .size(10.dp)
+                .background(if (ready) EclipseReady else EclipseWarning, CircleShape)
+                .clearAndSetSemantics {},
+        )
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
             Text(label, fontWeight = FontWeight.SemiBold)
