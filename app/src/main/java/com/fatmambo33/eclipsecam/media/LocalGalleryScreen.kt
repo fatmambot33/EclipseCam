@@ -23,6 +23,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -35,7 +36,10 @@ import java.io.File
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 private val GalleryAccent = Color(0xFF60A5FA)
@@ -51,6 +55,14 @@ private sealed interface GalleryUiState {
     data class Error(val message: String) : GalleryUiState
 }
 
+private sealed interface TimelapseUiState {
+    data object Idle : TimelapseUiState
+    data class Rendering(val progress: Int) : TimelapseUiState
+    data class Complete(val frameCount: Int) : TimelapseUiState
+    data class Failed(val reason: String) : TimelapseUiState
+    data object Cancelled : TimelapseUiState
+}
+
 /** Offline browser for app-private capture sessions and generated local media. */
 @Composable
 fun LocalGalleryScreen(rootDirectory: File? = null) {
@@ -58,10 +70,20 @@ fun LocalGalleryScreen(rootDirectory: File? = null) {
     val root = remember(rootDirectory, context) {
         rootDirectory ?: File(context.filesDir, "captures")
     }
+    val scope = rememberCoroutineScope()
+    val timelapseGenerator = remember(context) {
+        LocalTimelapseGenerator(
+            encoder = Media3TimelapseVideoEncoder(context.applicationContext),
+            frameProbe = AndroidJpegTimelapseFrameProbe(),
+        )
+    }
     var state by remember(root) { mutableStateOf<GalleryUiState>(GalleryUiState.Loading) }
     var selectedSessionId by remember(root) { mutableStateOf<String?>(null) }
+    var refreshToken by remember(root) { mutableStateOf(0) }
+    var timelapseState by remember(root) { mutableStateOf<TimelapseUiState>(TimelapseUiState.Idle) }
+    var timelapseJob by remember(root) { mutableStateOf<Job?>(null) }
 
-    LaunchedEffect(root) {
+    LaunchedEffect(root, refreshToken) {
         state = GalleryUiState.Loading
         state = withContext(Dispatchers.IO) {
             runCatching { LocalSessionIndex(root).listSessions() }
@@ -81,7 +103,36 @@ fun LocalGalleryScreen(rootDirectory: File? = null) {
     if (selected != null) {
         SessionDetail(
             session = selected,
+            timelapseState = timelapseState,
             onBack = { selectedSessionId = null },
+            onStartTimelapse = {
+                if (timelapseJob?.isActive != true) {
+                    timelapseState = TimelapseUiState.Rendering(0)
+                    timelapseJob = scope.launch {
+                        try {
+                            when (
+                                val result = timelapseGenerator.render(selected) { progress ->
+                                    timelapseState = TimelapseUiState.Rendering(progress)
+                                }
+                            ) {
+                                is TimelapseRenderResult.Completed -> {
+                                    timelapseState = TimelapseUiState.Complete(result.frameCount)
+                                    refreshToken += 1
+                                }
+                                is TimelapseRenderResult.NoFrames -> {
+                                    timelapseState = TimelapseUiState.Failed(result.reason)
+                                }
+                                is TimelapseRenderResult.Failed -> {
+                                    timelapseState = TimelapseUiState.Failed(result.reason)
+                                }
+                            }
+                        } catch (_: CancellationException) {
+                            timelapseState = TimelapseUiState.Cancelled
+                        }
+                    }
+                }
+            },
+            onCancelTimelapse = { timelapseJob?.cancel() },
         )
         return
     }
@@ -105,7 +156,10 @@ fun LocalGalleryScreen(rootDirectory: File? = null) {
             } else {
                 SessionList(
                     sessions = current.sessions,
-                    onSelect = { selectedSessionId = it.sessionId },
+                    onSelect = {
+                        selectedSessionId = it.sessionId
+                        timelapseState = TimelapseUiState.Idle
+                    },
                 )
             }
         }
@@ -212,7 +266,13 @@ private fun SessionCard(session: LocalCaptureSession, onClick: () -> Unit) {
 }
 
 @Composable
-private fun SessionDetail(session: LocalCaptureSession, onBack: () -> Unit) {
+private fun SessionDetail(
+    session: LocalCaptureSession,
+    timelapseState: TimelapseUiState,
+    onBack: () -> Unit,
+    onStartTimelapse: () -> Unit,
+    onCancelTimelapse: () -> Unit,
+) {
     LazyColumn(
         modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 18.dp)
             .testTag("gallery-detail"),
@@ -233,6 +293,14 @@ private fun SessionDetail(session: LocalCaptureSession, onBack: () -> Unit) {
                 "Session",
                 "${statusLabel(session.status)} • ${SESSION_DATE.format(session.capturedAtUtc)}\n" +
                     "${session.captures.size} captures • ${formatBytes(session.assets.sumOf(LocalSessionAsset::sizeBytes))}",
+            )
+        }
+        item {
+            TimelapseCard(
+                session = session,
+                state = timelapseState,
+                onStart = onStartTimelapse,
+                onCancel = onCancelTimelapse,
             )
         }
         if (session.phaseCounts.isNotEmpty()) {
@@ -268,6 +336,71 @@ private fun SessionDetail(session: LocalCaptureSession, onBack: () -> Unit) {
                     } + if (session.captures.size > 12) "\n+${session.captures.size - 12} more" else ""
                 },
             )
+        }
+    }
+}
+
+@Composable
+private fun TimelapseCard(
+    session: LocalCaptureSession,
+    state: TimelapseUiState,
+    onStart: () -> Unit,
+    onCancel: () -> Unit,
+) {
+    val hasTimelapse = session.generatedAssets.any { it.kind == LocalSessionAssetKind.TIMELAPSE }
+    Card(
+        modifier = Modifier.fillMaxWidth().testTag("timelapse-card"),
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(containerColor = GalleryCard),
+    ) {
+        Column(Modifier.padding(18.dp)) {
+            Text("Local timelapse", fontWeight = FontWeight.Bold)
+            Text(
+                "Silent H.264 video in an MP4 container. Rendering stays on this phone and never modifies the original captures.",
+                modifier = Modifier.padding(top = 8.dp, bottom = 12.dp),
+                color = GalleryMuted,
+            )
+            when (state) {
+                TimelapseUiState.Idle -> Text(
+                    if (hasTimelapse) "A complete timelapse is available." else "Ready to render from readable original JPEGs.",
+                    color = GalleryMuted,
+                    modifier = Modifier.testTag("timelapse-status"),
+                )
+                is TimelapseUiState.Rendering -> Text(
+                    "Rendering ${state.progress}%",
+                    color = GalleryAccent,
+                    modifier = Modifier.testTag("timelapse-status"),
+                )
+                is TimelapseUiState.Complete -> Text(
+                    "Complete • ${state.frameCount} frame${if (state.frameCount == 1) "" else "s"}",
+                    color = GalleryReady,
+                    modifier = Modifier.testTag("timelapse-status"),
+                )
+                is TimelapseUiState.Failed -> Text(
+                    state.reason,
+                    color = GalleryFailed,
+                    modifier = Modifier.testTag("timelapse-status"),
+                )
+                TimelapseUiState.Cancelled -> Text(
+                    "Cancelled. Partial output was removed.",
+                    color = GalleryWarning,
+                    modifier = Modifier.testTag("timelapse-status"),
+                )
+            }
+            Spacer(Modifier.height(12.dp))
+            if (state is TimelapseUiState.Rendering) {
+                Button(onClick = onCancel, modifier = Modifier.testTag("timelapse-cancel")) {
+                    Text("Cancel render")
+                }
+            } else {
+                Button(
+                    onClick = onStart,
+                    enabled = session.captures.isNotEmpty(),
+                    modifier = Modifier.testTag("timelapse-start"),
+                ) {
+                    Text(if (hasTimelapse) "Regenerate timelapse" else "Generate timelapse")
+                }
+            }
         }
     }
 }
