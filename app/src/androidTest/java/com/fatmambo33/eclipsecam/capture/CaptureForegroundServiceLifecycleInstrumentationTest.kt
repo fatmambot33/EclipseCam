@@ -2,9 +2,7 @@ package com.fatmambo33.eclipsecam.capture
 
 import android.Manifest
 import android.app.NotificationManager
-import android.content.Intent
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop
-import androidx.core.content.ContextCompat
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -26,8 +24,10 @@ import org.junit.runner.RunWith
 @ExperimentalCamera2Interop
 class CaptureForegroundServiceLifecycleInstrumentationTest {
     @get:Rule
-    val notificationPermission: GrantPermissionRule =
-        GrantPermissionRule.grant(Manifest.permission.POST_NOTIFICATIONS)
+    val foregroundPermissions: GrantPermissionRule = GrantPermissionRule.grant(
+        Manifest.permission.CAMERA,
+        Manifest.permission.POST_NOTIFICATIONS,
+    )
 
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private val context get() = instrumentation.targetContext
@@ -55,65 +55,63 @@ class CaptureForegroundServiceLifecycleInstrumentationTest {
 
     @Test
     fun serviceRoutesLifecycleCommandsAndKeepsForegroundStateAcrossActivityRecreation() {
-        val startIntent = Intent(context, CaptureForegroundService::class.java)
-            .setAction("com.fatmambo33.eclipsecam.capture.START")
-        ContextCompat.startForegroundService(context, startIntent)
-
-        await { session.state == CaptureServiceState.RUNNING }
-        await {
-            context.getSystemService(NotificationManager::class.java)
-                .activeNotifications
-                .any { it.id == CaptureForegroundService.NOTIFICATION_ID }
-        }
-        assertEquals(listOf(CaptureServiceCommand.START), session.commandsSnapshot())
-
-        CaptureForegroundService.pause(context)
-        await { session.state == CaptureServiceState.PAUSED }
-        assertEquals(
-            listOf(CaptureServiceCommand.START, CaptureServiceCommand.PAUSE),
-            session.commandsSnapshot(),
-        )
-
         ActivityScenario.launch(MainActivity::class.java).use { activity ->
+            CaptureForegroundService.start(context)
+
+            await("service to enter RUNNING") { session.state == CaptureServiceState.RUNNING }
+            await("foreground notification") {
+                context.getSystemService(NotificationManager::class.java)
+                    .activeNotifications
+                    .any { it.id == CaptureForegroundService.NOTIFICATION_ID }
+            }
+            assertEquals(listOf(CaptureServiceCommand.START), session.commandsSnapshot())
+
+            CaptureForegroundService.pause(context)
+            await("service to enter PAUSED") { session.state == CaptureServiceState.PAUSED }
+            assertEquals(
+                listOf(CaptureServiceCommand.START, CaptureServiceCommand.PAUSE),
+                session.commandsSnapshot(),
+            )
+
             activity.recreate()
             assertFalse(session.closed)
             assertEquals(CaptureServiceState.PAUSED, session.state)
+
+            instrumentation.runOnMainSync {
+                val result = service.onStartCommand(null, 0, 2)
+                assertEquals(android.app.Service.START_STICKY, result)
+            }
+            assertEquals(CaptureServiceState.PAUSED, session.state)
+            assertEquals(
+                listOf(CaptureServiceCommand.START, CaptureServiceCommand.PAUSE),
+                session.commandsSnapshot(),
+            )
+
+            CaptureForegroundService.start(context)
+            await("service to resume RUNNING") { session.state == CaptureServiceState.RUNNING }
+            assertEquals(
+                listOf(
+                    CaptureServiceCommand.START,
+                    CaptureServiceCommand.PAUSE,
+                    CaptureServiceCommand.START,
+                ),
+                session.commandsSnapshot(),
+            )
+
+            CaptureForegroundService.stop(context)
+            await("STOP command") { CaptureServiceCommand.STOP in session.commandsSnapshot() }
+            await("service destroy cleanup") { session.closed }
+            assertTrue(session.closed)
+            assertEquals(CaptureServiceState.STOPPED, session.state)
         }
-
-        instrumentation.runOnMainSync {
-            val result = service.onStartCommand(null, 0, 2)
-            assertEquals(android.app.Service.START_STICKY, result)
-        }
-        assertEquals(CaptureServiceState.PAUSED, session.state)
-        assertEquals(
-            listOf(CaptureServiceCommand.START, CaptureServiceCommand.PAUSE),
-            session.commandsSnapshot(),
-        )
-
-        CaptureForegroundService.start(context)
-        await { session.state == CaptureServiceState.RUNNING }
-        assertEquals(
-            listOf(
-                CaptureServiceCommand.START,
-                CaptureServiceCommand.PAUSE,
-                CaptureServiceCommand.START,
-            ),
-            session.commandsSnapshot(),
-        )
-
-        CaptureForegroundService.stop(context)
-        await { CaptureServiceCommand.STOP in session.commandsSnapshot() }
-        await { session.closed }
-        assertTrue(session.closed)
-        assertEquals(CaptureServiceState.STOPPED, session.state)
     }
 
-    private fun await(condition: () -> Boolean) {
+    private fun await(label: String, condition: () -> Boolean) {
         val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5)
         while (!condition() && System.nanoTime() < deadline) {
             Thread.sleep(25)
         }
-        assertTrue("Timed out waiting for foreground-service lifecycle condition.", condition())
+        assertTrue("Timed out waiting for $label.", condition())
     }
 
     private class RecordingSession(
