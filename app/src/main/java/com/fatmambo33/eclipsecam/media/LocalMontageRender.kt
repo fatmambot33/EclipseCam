@@ -91,13 +91,15 @@ object MontageFrameSelector {
         val partial = classified.filter { it.phase == CapturePhase.PARTIAL }
         val contacts = classified.filter { it.phase == CapturePhase.CONTACT_BURST }
         val totality = classified.filter { it.phase == CapturePhase.TOTALITY }
+        val firstContact = contacts.firstOrNull()
+        val firstPartial = partial.firstOrNull()
 
         val defaults = mapOf(
-            MontageSlot.PARTIAL_EARLY to partial.firstOrNull(),
-            MontageSlot.CONTACT_EARLY to contacts.firstOrNull(),
-            MontageSlot.TOTALITY to totality.takeIf(List<*>::isNotEmpty)?.let { it[it.size / 2] },
-            MontageSlot.CONTACT_LATE to contacts.lastOrNull()?.takeUnless { it === contacts.firstOrNull() },
-            MontageSlot.PARTIAL_LATE to partial.lastOrNull()?.takeUnless { it === partial.firstOrNull() },
+            MontageSlot.PARTIAL_EARLY to firstPartial,
+            MontageSlot.CONTACT_EARLY to firstContact,
+            MontageSlot.TOTALITY to totality.takeIf { it.isNotEmpty() }?.let { it[it.size / 2] },
+            MontageSlot.CONTACT_LATE to contacts.lastOrNull()?.takeUnless { it == firstContact },
+            MontageSlot.PARTIAL_LATE to partial.lastOrNull()?.takeUnless { it == firstPartial },
         )
 
         val panels = MontageSlot.entries.map { slot ->
