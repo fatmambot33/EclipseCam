@@ -40,7 +40,7 @@ private sealed interface MontageUiState {
     data class Failed(val reason: String) : MontageUiState
 }
 
-/** Phase-aware montage controls embedded in one local Gallery session detail. */
+/** Phase-aware montage plus explicit export/share actions embedded in one Gallery detail. */
 @Composable
 fun LocalMontageCard(
     session: LocalCaptureSession,
@@ -69,101 +69,106 @@ fun LocalMontageCard(
     }
     val hasMontage = session.generatedAssets.any { it.kind == LocalSessionAssetKind.MONTAGE }
 
-    Card(
-        modifier = Modifier.fillMaxWidth().testTag("montage-card"),
-        shape = RoundedCornerShape(18.dp),
-        colors = CardDefaults.cardColors(containerColor = MontageCardBackground),
-    ) {
-        Column(Modifier.padding(18.dp)) {
-            Text("Phase-aware montage", fontWeight = FontWeight.Bold)
-            Text(
-                "Choose which classified representatives to include. Missing phases stay visible as “Not captured”; EclipseCam never duplicates a neighbouring frame to fill a gap.",
-                modifier = Modifier.padding(top = 8.dp, bottom = 12.dp),
-                color = MontageMuted,
-            )
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Card(
+            modifier = Modifier.fillMaxWidth().testTag("montage-card"),
+            shape = RoundedCornerShape(18.dp),
+            colors = CardDefaults.cardColors(containerColor = MontageCardBackground),
+        ) {
+            Column(Modifier.padding(18.dp)) {
+                Text("Phase-aware montage", fontWeight = FontWeight.Bold)
+                Text(
+                    "Choose which classified representatives to include. Missing phases stay visible as “Not captured”; EclipseCam never duplicates a neighbouring frame to fill a gap.",
+                    modifier = Modifier.padding(top = 8.dp, bottom = 12.dp),
+                    color = MontageMuted,
+                )
 
-            MontageSlot.entries.forEach { slot ->
-                val asset = availableSlots[slot]
-                if (asset == null) {
-                    Text(
-                        "${montageSlotLabel(slot)} • Missing",
-                        modifier = Modifier.padding(vertical = 4.dp).testTag("montage-slot-${slot.name.lowercase()}"),
+                MontageSlot.entries.forEach { slot ->
+                    val asset = availableSlots[slot]
+                    if (asset == null) {
+                        Text(
+                            "${montageSlotLabel(slot)} • Missing",
+                            modifier = Modifier.padding(vertical = 4.dp).testTag("montage-slot-${slot.name.lowercase()}"),
+                            color = MontageMuted,
+                        )
+                    } else {
+                        FilterChip(
+                            selected = slot in includedSlots,
+                            onClick = {
+                                includedSlots = if (slot in includedSlots) {
+                                    includedSlots - slot
+                                } else {
+                                    includedSlots + slot
+                                }
+                            },
+                            label = { Text(montageSlotLabel(slot)) },
+                            modifier = Modifier.testTag("montage-slot-${slot.name.lowercase()}"),
+                        )
+                        Text(
+                            asset.file.name,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MontageMuted,
+                            modifier = Modifier.padding(start = 8.dp, bottom = 4.dp),
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(8.dp))
+                when (val current = state) {
+                    MontageUiState.Idle -> Text(
+                        if (hasMontage) "A complete montage is available." else "Ready to generate locally.",
                         color = MontageMuted,
+                        modifier = Modifier.testTag("montage-status"),
                     )
-                } else {
-                    FilterChip(
-                        selected = slot in includedSlots,
-                        onClick = {
-                            includedSlots = if (slot in includedSlots) {
-                                includedSlots - slot
-                            } else {
-                                includedSlots + slot
-                            }
-                        },
-                        label = { Text(montageSlotLabel(slot)) },
-                        modifier = Modifier.testTag("montage-slot-${slot.name.lowercase()}"),
+                    MontageUiState.Rendering -> Text(
+                        "Generating montage…",
+                        color = MontageAccent,
+                        modifier = Modifier.testTag("montage-status"),
                     )
-                    Text(
-                        asset.file.name,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MontageMuted,
-                        modifier = Modifier.padding(start = 8.dp, bottom = 4.dp),
+                    is MontageUiState.Complete -> Text(
+                        "Complete • ${current.frameCount} selected • ${current.missingCount} missing",
+                        color = MontageReady,
+                        modifier = Modifier.testTag("montage-status"),
+                    )
+                    is MontageUiState.Failed -> Text(
+                        current.reason,
+                        color = MontageFailed,
+                        modifier = Modifier.testTag("montage-status"),
                     )
                 }
-            }
 
-            Spacer(Modifier.height(8.dp))
-            when (val current = state) {
-                MontageUiState.Idle -> Text(
-                    if (hasMontage) "A complete montage is available." else "Ready to generate locally.",
-                    color = MontageMuted,
-                    modifier = Modifier.testTag("montage-status"),
-                )
-                MontageUiState.Rendering -> Text(
-                    "Generating montage…",
-                    color = MontageAccent,
-                    modifier = Modifier.testTag("montage-status"),
-                )
-                is MontageUiState.Complete -> Text(
-                    "Complete • ${current.frameCount} selected • ${current.missingCount} missing",
-                    color = MontageReady,
-                    modifier = Modifier.testTag("montage-status"),
-                )
-                is MontageUiState.Failed -> Text(
-                    current.reason,
-                    color = MontageFailed,
-                    modifier = Modifier.testTag("montage-status"),
-                )
-            }
-
-            Spacer(Modifier.height(12.dp))
-            Button(
-                enabled = state !is MontageUiState.Rendering && currentSelection.selectedAssets.isNotEmpty(),
-                onClick = {
-                    state = MontageUiState.Rendering
-                    scope.launch {
-                        try {
-                            when (val result = generator.render(session, includedSlots)) {
-                                is MontageRenderResult.Completed -> {
-                                    state = MontageUiState.Complete(
-                                        frameCount = result.selectedFrameCount,
-                                        missingCount = result.missingSlots.size,
-                                    )
-                                    onGenerated()
+                Spacer(Modifier.height(12.dp))
+                Button(
+                    enabled = state !is MontageUiState.Rendering && currentSelection.selectedAssets.isNotEmpty(),
+                    onClick = {
+                        state = MontageUiState.Rendering
+                        scope.launch {
+                            try {
+                                when (val result = generator.render(session, includedSlots)) {
+                                    is MontageRenderResult.Completed -> {
+                                        state = MontageUiState.Complete(
+                                            frameCount = result.selectedFrameCount,
+                                            missingCount = result.missingSlots.size,
+                                        )
+                                        onGenerated()
+                                    }
+                                    is MontageRenderResult.NoFrames -> state = MontageUiState.Failed(result.reason)
+                                    is MontageRenderResult.Failed -> state = MontageUiState.Failed(result.reason)
                                 }
-                                is MontageRenderResult.NoFrames -> state = MontageUiState.Failed(result.reason)
-                                is MontageRenderResult.Failed -> state = MontageUiState.Failed(result.reason)
+                            } catch (cancelled: CancellationException) {
+                                throw cancelled
                             }
-                        } catch (_: CancellationException) {
-                            throw CancellationException("Montage generation cancelled with Gallery lifecycle.")
                         }
-                    }
-                },
-                modifier = Modifier.testTag("montage-generate"),
-            ) {
-                Text(if (hasMontage) "Regenerate montage" else "Generate montage")
+                    },
+                    modifier = Modifier.testTag("montage-generate"),
+                ) {
+                    Text(if (hasMontage) "Regenerate montage" else "Generate montage")
+                }
             }
         }
+
+        Spacer(Modifier.height(12.dp))
+        LocalExportShareCard(session)
     }
 }
 
