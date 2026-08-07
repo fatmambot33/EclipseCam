@@ -170,7 +170,9 @@ class LocalSessionIndex(
         val generatedAssets = File(directory, GENERATED_DIRECTORY).listFiles()
             ?.asSequence()
             ?.filter { it.isFile && it.length() > 0L }
-            ?.mapNotNull { file -> generatedKind(file)?.let(file::toAsset) }
+            ?.mapNotNull { file ->
+                generatedKind(file)?.let { kind -> file.toAsset(kind) }
+            }
             ?.sortedBy { it.file.name }
             ?.toList()
             .orEmpty()
@@ -184,7 +186,6 @@ class LocalSessionIndex(
             ?: generatedAssets.minOfOrNull(LocalSessionAsset::modifiedAtUtc)
             ?: directoryModifiedAt
         val modifiedAtUtc = buildList {
-            add(directoryModifiedAt)
             addAll(assets.map(LocalSessionAsset::modifiedAtUtc))
             stateMetadata?.updatedAtUtc?.let(::add)
         }.maxOrNull() ?: directoryModifiedAt
