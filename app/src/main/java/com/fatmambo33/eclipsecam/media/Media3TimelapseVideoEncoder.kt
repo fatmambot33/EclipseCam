@@ -39,7 +39,7 @@ class AndroidJpegTimelapseFrameProbe : TimelapseFrameProbe {
  * composition, scaling and hardware/software video encoding off the application thread while its
  * control surface remains on the main looper as required by Transformer.
  */
-@UnstableApi
+@androidx.annotation.OptIn(markerClass = [UnstableApi::class])
 class Media3TimelapseVideoEncoder(
     context: Context,
     private val frameRate: Int = DEFAULT_FRAME_RATE,
