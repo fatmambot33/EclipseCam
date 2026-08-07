@@ -133,6 +133,7 @@ fun LocalGalleryScreen(rootDirectory: File? = null) {
                 }
             },
             onCancelTimelapse = { timelapseJob?.cancel() },
+            onMontageGenerated = { refreshToken += 1 },
         )
         return
     }
@@ -272,6 +273,7 @@ private fun SessionDetail(
     onBack: () -> Unit,
     onStartTimelapse: () -> Unit,
     onCancelTimelapse: () -> Unit,
+    onMontageGenerated: () -> Unit,
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 18.dp)
@@ -301,6 +303,12 @@ private fun SessionDetail(
                 state = timelapseState,
                 onStart = onStartTimelapse,
                 onCancel = onCancelTimelapse,
+            )
+        }
+        item {
+            LocalMontageCard(
+                session = session,
+                onGenerated = onMontageGenerated,
             )
         }
         if (session.phaseCounts.isNotEmpty()) {
