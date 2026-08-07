@@ -53,9 +53,10 @@ import androidx.compose.ui.unit.dp
 import com.fatmambo33.eclipsecam.camera.preview.CameraPreviewState
 import com.fatmambo33.eclipsecam.camera.preview.CameraPreviewSurface
 import com.fatmambo33.eclipsecam.camera.preview.PreviewLens
-import kotlinx.coroutines.delay
+import com.fatmambo33.eclipsecam.media.LocalGalleryScreen
 import java.time.Duration
 import java.time.Instant
+import kotlinx.coroutines.delay
 
 private val EclipseBackground = Color(0xFF070A12)
 private val EclipseCard = Color(0xFF111827)
@@ -289,18 +290,7 @@ private fun PositionScreen() {
 
 @Composable
 private fun GalleryScreen() {
-    ScreenColumn("Your eclipse sessions") {
-        HeroCard(
-            "Nothing captured yet",
-            "Photos, timelapses, montages, and capture reports will stay on this phone until you explicitly share them.",
-            Color(0xFF60A5FA),
-        )
-        Spacer(Modifier.height(16.dp))
-        InfoCard(
-            "Privacy by default",
-            "No account, no automatic upload, no advertising, and no behavioural analytics. Sharing will always use Android's explicit share sheet.",
-        )
-    }
+    LocalGalleryScreen()
 }
 
 @Composable
