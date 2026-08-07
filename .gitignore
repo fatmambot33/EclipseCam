@@ -1,0 +1,30 @@
+# Gradle / Android build output
+.gradle/
+build/
+**/build/
+local.properties
+
+# IDE / OS files
+.idea/
+*.iml
+.DS_Store
+
+# Local environment and credentials
+.env
+.env.*
+!.env.example
+*.jks
+*.keystore
+*.p12
+*.pfx
+*.pem
+*.key
+*.der
+google-services.json
+service-account*.json
+*service_account*.json
+credentials*.json
+
+# Android signing helper files
+keystore.properties
+signing.properties

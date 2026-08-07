@@ -7,6 +7,7 @@ The format follows Keep a Changelog and Semantic Versioning.
 ## [Unreleased]
 
 ### Added
+- Credential-free release verification with tracked-secret/signing-material scanning, unsigned AAB inspection, release metadata, SHA-256 evidence, and archived lint/R8 artifacts
 - CI-enforced runtime privacy and Data Safety evidence covering permissions, local data flows, explicit sharing, network boundaries, and analytics/tracking exclusions
 - Foreground capture service routing through the recovered runtime host with fail-closed startup and deterministic destruction cleanup
 - Fail-closed durable instruction-index bridge from the foreground runtime to the suspending CameraX sequence pipeline
