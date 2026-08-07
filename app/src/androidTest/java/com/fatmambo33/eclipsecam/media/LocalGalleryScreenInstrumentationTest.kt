@@ -1,10 +1,8 @@
 package com.fatmambo33.eclipsecam.media
 
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
-import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -71,7 +69,7 @@ class LocalGalleryScreenInstrumentationTest {
     }
 
     private fun openGallery() {
-        compose.onNodeWithContentDescription("Gallery").performClick()
+        compose.onNodeWithTag("tab-gallery").performClick()
     }
 
     private fun waitForTag(tag: String) {
