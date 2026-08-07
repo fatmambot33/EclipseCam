@@ -4,11 +4,11 @@ import android.Manifest
 import android.app.NotificationManager
 import android.content.Intent
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop
+import androidx.core.content.ContextCompat
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
-import androidx.test.rule.ServiceTestRule
 import com.fatmambo33.eclipsecam.MainActivity
 import java.time.Instant
 import java.util.Collections
@@ -28,9 +28,6 @@ class CaptureForegroundServiceLifecycleInstrumentationTest {
     @get:Rule
     val notificationPermission: GrantPermissionRule =
         GrantPermissionRule.grant(Manifest.permission.POST_NOTIFICATIONS)
-
-    @get:Rule
-    val serviceRule = ServiceTestRule()
 
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private val context get() = instrumentation.targetContext
@@ -60,7 +57,7 @@ class CaptureForegroundServiceLifecycleInstrumentationTest {
     fun serviceRoutesLifecycleCommandsAndKeepsForegroundStateAcrossActivityRecreation() {
         val startIntent = Intent(context, CaptureForegroundService::class.java)
             .setAction("com.fatmambo33.eclipsecam.capture.START")
-        serviceRule.startService(startIntent)
+        ContextCompat.startForegroundService(context, startIntent)
 
         await { session.state == CaptureServiceState.RUNNING }
         await {
