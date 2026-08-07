@@ -1,6 +1,7 @@
 package com.fatmambo33.eclipsecam.capture
 
 import android.content.Context
+import android.os.Looper
 import android.util.Size
 import androidx.camera.camera2.interop.Camera2CameraInfo
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop
@@ -13,7 +14,10 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
 import java.util.concurrent.Executor
 import kotlin.coroutines.resume
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withContext
 
 /** Validated request for binding one exact camera to the capture-only ImageCapture use case. */
 data class CameraXCaptureBindingRequest(
@@ -57,8 +61,8 @@ object ExactCameraIdMatcher {
  * Production CameraX capture binding backed by ProcessCameraProvider.
  *
  * The selected capability id is treated as authoritative: this adapter never falls back to another
- * lens. It binds only ImageCapture at the validated JPEG size and fails closed when the provider,
- * exact camera id, or lifecycle binding is unavailable.
+ * lens. CameraX lifecycle binding and unbinding are always executed on Android's main thread even
+ * when the foreground capture worker invokes this port from a background thread.
  */
 @ExperimentalCamera2Interop
 class ProcessCameraProviderCaptureBindingPort(
@@ -72,34 +76,46 @@ class ProcessCameraProviderCaptureBindingPort(
 
     override suspend fun bind(
         request: CameraXCaptureBindingRequest,
-    ): CameraXCaptureBindingResult = runCatching {
-        val cameraProvider = awaitProvider()
-        val selector = exactCameraSelector(request.cameraId)
-        if (!cameraProvider.hasCamera(selector)) {
-            return CameraXCaptureBindingResult.Unavailable(
-                "Validated camera ${request.cameraId} is unavailable to CameraX.",
+    ): CameraXCaptureBindingResult = withContext(Dispatchers.Main.immediate) {
+        runCatching {
+            val cameraProvider = awaitProvider()
+            val selector = exactCameraSelector(request.cameraId)
+            if (!cameraProvider.hasCamera(selector)) {
+                return@withContext CameraXCaptureBindingResult.Unavailable(
+                    "Validated camera ${request.cameraId} is unavailable to CameraX.",
+                )
+            }
+
+            val capture = ImageCapture.Builder()
+                .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
+                .setTargetResolution(Size(request.width, request.height))
+                .build()
+
+            imageCapture?.let { previousCapture ->
+                cameraProvider.unbind(previousCapture)
+            }
+            val camera = cameraProvider.bindToLifecycle(lifecycleOwner, selector, capture)
+            provider = cameraProvider
+            imageCapture = capture
+            CameraXCaptureBindingResult.Ready(BoundCameraXCapture(camera, capture))
+        }.getOrElse { error ->
+            CameraXCaptureBindingResult.Unavailable(
+                error.message ?: "CameraX capture binding failed.",
             )
         }
-
-        val capture = ImageCapture.Builder()
-            .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
-            .setTargetResolution(Size(request.width, request.height))
-            .build()
-
-        imageCapture?.let { previousCapture ->
-            cameraProvider.unbind(previousCapture)
-        }
-        val camera = cameraProvider.bindToLifecycle(lifecycleOwner, selector, capture)
-        provider = cameraProvider
-        imageCapture = capture
-        CameraXCaptureBindingResult.Ready(BoundCameraXCapture(camera, capture))
-    }.getOrElse { error ->
-        CameraXCaptureBindingResult.Unavailable(
-            error.message ?: "CameraX capture binding failed.",
-        )
     }
 
     override fun unbind() {
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            unbindOnMainThread()
+        } else {
+            runBlocking(Dispatchers.Main.immediate) {
+                unbindOnMainThread()
+            }
+        }
+    }
+
+    private fun unbindOnMainThread() {
         val capture = imageCapture
         if (capture != null) {
             runCatching { provider?.unbind(capture) }
