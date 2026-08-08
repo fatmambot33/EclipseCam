@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -174,13 +175,19 @@ private fun CameraScreen() {
         if (!cameraGranted) {
             Button(
                 onClick = { cameraPermission.launch(Manifest.permission.CAMERA) },
-                modifier = Modifier.fillMaxWidth().testTag("camera-primary-action"),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 48.dp)
+                    .testTag("camera-primary-action"),
             ) { Text("Enable camera") }
         } else {
             Button(
                 onClick = {},
                 enabled = false,
-                modifier = Modifier.fillMaxWidth().testTag("camera-primary-action"),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 48.dp)
+                    .testTag("camera-primary-action"),
             ) {
                 Text("Automatic capture not armed")
             }
@@ -291,7 +298,10 @@ private fun PositionScreen() {
                         ),
                     )
                 },
-                modifier = Modifier.fillMaxWidth().testTag("position-primary-action"),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 48.dp)
+                    .testTag("position-primary-action"),
             ) { Text("Enable location") }
         }
         Spacer(Modifier.height(12.dp))
