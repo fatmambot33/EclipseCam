@@ -7,6 +7,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -52,6 +53,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.semantics.semantics
@@ -88,11 +90,11 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-private enum class AppTab(val label: String, val icon: ImageVector) {
-    Camera("Camera", Icons.Default.CameraAlt),
-    Live("Live", Icons.Default.NightsStay),
-    Position("Position", Icons.Default.LocationOn),
-    Gallery("Gallery", Icons.Default.Collections),
+private enum class AppTab(@StringRes val labelRes: Int, val icon: ImageVector) {
+    Camera(R.string.tab_camera, Icons.Default.CameraAlt),
+    Live(R.string.tab_live, Icons.Default.NightsStay),
+    Position(R.string.tab_position, Icons.Default.LocationOn),
+    Gallery(R.string.tab_gallery, Icons.Default.Collections),
 }
 
 @Composable
@@ -107,7 +109,7 @@ private fun EclipseCamApp() {
                         selected = selectedTab == tab,
                         onClick = { selectedTab = tab },
                         icon = { Icon(tab.icon, contentDescription = null) },
-                        label = { Text(tab.label) },
+                        label = { Text(stringResource(tab.labelRes)) },
                         modifier = Modifier.testTag("tab-${tab.name.lowercase()}"),
                     )
                 }
@@ -143,12 +145,16 @@ private fun CameraScreen() {
         cameraGranted = it
     }
 
-    ScreenColumn("Prepare your phone") {
+    ScreenColumn(stringResource(R.string.screen_prepare_phone)) {
         HeroCard(
             previewTitle(previewState),
             previewMessage(previewState),
             if (previewState is CameraPreviewState.Streaming) EclipseReady else EclipseWarning,
-            if (previewState is CameraPreviewState.Streaming) "Ready" else "Needs attention",
+            if (previewState is CameraPreviewState.Streaming) {
+                stringResource(R.string.status_ready)
+            } else {
+                stringResource(R.string.status_needs_attention)
+            },
         )
         Spacer(Modifier.height(16.dp))
         Card(
@@ -164,13 +170,25 @@ private fun CameraScreen() {
         }
         Spacer(Modifier.height(16.dp))
         ReadinessRow(
-            "Camera preview",
+            stringResource(R.string.camera_preview_label),
             previewState is CameraPreviewState.Streaming,
             previewDetail(previewState),
         )
-        ReadinessRow("Tripod", false, "Confirm before arming")
-        ReadinessRow("Solar filter", false, "Required during partial phases")
-        ReadinessRow("Scientific model", true, "Validated local circumstances available")
+        ReadinessRow(
+            stringResource(R.string.tripod_label),
+            false,
+            stringResource(R.string.tripod_detail),
+        )
+        ReadinessRow(
+            stringResource(R.string.solar_filter_label),
+            false,
+            stringResource(R.string.solar_filter_detail),
+        )
+        ReadinessRow(
+            stringResource(R.string.scientific_model_label),
+            true,
+            stringResource(R.string.scientific_model_detail),
+        )
         Spacer(Modifier.height(20.dp))
         if (!cameraGranted) {
             Button(
@@ -179,7 +197,7 @@ private fun CameraScreen() {
                     .fillMaxWidth()
                     .heightIn(min = 48.dp)
                     .testTag("camera-primary-action"),
-            ) { Text("Enable camera") }
+            ) { Text(stringResource(R.string.enable_camera)) }
         } else {
             Button(
                 onClick = {},
@@ -189,40 +207,41 @@ private fun CameraScreen() {
                     .heightIn(min = 48.dp)
                     .testTag("camera-primary-action"),
             ) {
-                Text("Automatic capture not armed")
+                Text(stringResource(R.string.automatic_capture_not_armed))
             }
         }
         Spacer(Modifier.height(12.dp))
         Text(
-            "Never look directly at the Sun without certified eclipse eye protection. Use an appropriate solar filter on the phone camera during partial phases.",
+            stringResource(R.string.solar_safety_warning),
             style = MaterialTheme.typography.bodySmall,
             color = Color(0xFFFCA5A5),
         )
     }
 }
 
+@Composable
 private fun previewTitle(state: CameraPreviewState): String = when (state) {
-    CameraPreviewState.WaitingForPermission -> "Camera access needed"
-    CameraPreviewState.Starting -> "Starting camera"
-    is CameraPreviewState.Streaming -> "Live preview ready"
-    is CameraPreviewState.Unavailable -> "Camera unavailable"
+    CameraPreviewState.WaitingForPermission -> stringResource(R.string.camera_access_needed)
+    CameraPreviewState.Starting -> stringResource(R.string.camera_starting)
+    is CameraPreviewState.Streaming -> stringResource(R.string.camera_preview_ready)
+    is CameraPreviewState.Unavailable -> stringResource(R.string.camera_unavailable)
 }
 
+@Composable
 private fun previewMessage(state: CameraPreviewState): String = when (state) {
-    CameraPreviewState.WaitingForPermission ->
-        "EclipseCam needs camera access for local alignment guidance and capture."
-    CameraPreviewState.Starting -> "Connecting the preview to this screen and lifecycle."
-    is CameraPreviewState.Streaming ->
-        "Mount the phone securely. The preview stops automatically when this screen leaves the lifecycle."
+    CameraPreviewState.WaitingForPermission -> stringResource(R.string.camera_permission_message)
+    CameraPreviewState.Starting -> stringResource(R.string.camera_starting_message)
+    is CameraPreviewState.Streaming -> stringResource(R.string.camera_streaming_message)
     is CameraPreviewState.Unavailable -> state.reason
 }
 
+@Composable
 private fun previewDetail(state: CameraPreviewState): String = when (state) {
-    CameraPreviewState.WaitingForPermission -> "Permission required"
-    CameraPreviewState.Starting -> "Binding CameraX"
+    CameraPreviewState.WaitingForPermission -> stringResource(R.string.camera_permission_required)
+    CameraPreviewState.Starting -> stringResource(R.string.camera_binding)
     is CameraPreviewState.Streaming -> when (state.lens) {
-        PreviewLens.BACK -> "Back camera streaming"
-        PreviewLens.FRONT -> "Front-camera fallback streaming"
+        PreviewLens.BACK -> stringResource(R.string.camera_back_streaming)
+        PreviewLens.FRONT -> stringResource(R.string.camera_front_fallback_streaming)
     }
     is CameraPreviewState.Unavailable -> state.reason
 }
@@ -239,26 +258,26 @@ private fun LiveScreen() {
     val referenceEvent = Instant.parse("2026-08-12T17:46:00Z")
     val remaining = Duration.between(Instant.ofEpochSecond(nowEpochSeconds), referenceEvent)
 
-    ScreenColumn("Live eclipse status") {
+    ScreenColumn(stringResource(R.string.screen_live_status)) {
         HeroCard(
-            "12 August 2026",
+            stringResource(R.string.reference_eclipse_date),
             if (remaining.isNegative) {
-                "Reference event time has passed. Local circumstances still require validated GPS-based calculation."
+                stringResource(R.string.reference_event_passed)
             } else {
                 formatDuration(remaining)
             },
             EclipseAccent,
-            "Reference countdown",
+            stringResource(R.string.status_reference_countdown),
         )
         Spacer(Modifier.height(16.dp))
         InfoCard(
-            "Local circumstances",
-            "Exact contacts, magnitude, obscuration, Sun altitude, and totality duration will be calculated locally from GPS after the validated Besselian engine is integrated.",
+            stringResource(R.string.local_circumstances_title),
+            stringResource(R.string.local_circumstances_body),
         )
         Spacer(Modifier.height(12.dp))
         InfoCard(
-            "No network required",
-            "The astronomy engine, countdowns, sensor processing, capture plan, and media remain on the phone. Google Maps is only an optional online basemap.",
+            stringResource(R.string.no_network_required_title),
+            stringResource(R.string.no_network_required_body),
         )
     }
 }
@@ -276,16 +295,24 @@ private fun PositionScreen() {
             it[Manifest.permission.ACCESS_COARSE_LOCATION] == true
     }
 
-    ScreenColumn("Position against the eclipse") {
+    ScreenColumn(stringResource(R.string.screen_position)) {
         HeroCard(
-            if (locationGranted) "Location ready" else "Use your location",
             if (locationGranted) {
-                "EclipseCam can calculate your relationship to the path locally. The bold centreline and path limits will appear after scientific validation."
+                stringResource(R.string.location_ready)
             } else {
-                "Allow location so EclipseCam can tell you where to stand and how much totality you can gain by moving."
+                stringResource(R.string.use_your_location)
+            },
+            if (locationGranted) {
+                stringResource(R.string.location_ready_message)
+            } else {
+                stringResource(R.string.location_permission_message)
             },
             if (locationGranted) EclipseReady else EclipseWarning,
-            if (locationGranted) "Ready" else "Action required",
+            if (locationGranted) {
+                stringResource(R.string.status_ready)
+            } else {
+                stringResource(R.string.status_action_required)
+            },
         )
         Spacer(Modifier.height(16.dp))
         if (!locationGranted) {
@@ -302,12 +329,12 @@ private fun PositionScreen() {
                     .fillMaxWidth()
                     .heightIn(min = 48.dp)
                     .testTag("position-primary-action"),
-            ) { Text("Enable location") }
+            ) { Text(stringResource(R.string.enable_location)) }
         }
         Spacer(Modifier.height(12.dp))
         InfoCard(
-            "Observer-centred map",
-            "The finished map will prioritise you, the bold eclipse centreline, northern and southern limits, moving shadow, GPS uncertainty, and the best nearby position.",
+            stringResource(R.string.observer_map_title),
+            stringResource(R.string.observer_map_body),
         )
     }
 }
@@ -325,7 +352,7 @@ private fun ScreenColumn(title: String, content: @Composable ColumnScope.() -> U
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 20.dp, vertical = 18.dp),
     ) {
-        Text("EclipseCam", style = MaterialTheme.typography.labelLarge, color = EclipseAccent)
+        Text(stringResource(R.string.app_name), style = MaterialTheme.typography.labelLarge, color = EclipseAccent)
         Text(
             title,
             style = MaterialTheme.typography.headlineMedium,
@@ -369,11 +396,16 @@ private fun HeroCard(
 
 @Composable
 private fun ReadinessRow(label: String, ready: Boolean, detail: String) {
+    val status = if (ready) {
+        stringResource(R.string.status_ready)
+    } else {
+        stringResource(R.string.status_needs_attention)
+    }
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp)
-            .semantics { stateDescription = if (ready) "Ready" else "Needs attention" },
+            .semantics { stateDescription = status },
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
@@ -409,10 +441,17 @@ private fun InfoCard(title: String, body: String) {
     }
 }
 
+@Composable
 private fun formatDuration(duration: Duration): String {
     val days = duration.toDays()
     val hours = duration.minusDays(days).toHours()
     val minutes = duration.minusDays(days).minusHours(hours).toMinutes()
     val seconds = duration.minusDays(days).minusHours(hours).minusMinutes(minutes).seconds
-    return "Reference countdown\n${days}d ${hours}h ${minutes}m ${seconds}s"
+    return stringResource(
+        R.string.reference_countdown_format,
+        days,
+        hours,
+        minutes,
+        seconds,
+    )
 }
