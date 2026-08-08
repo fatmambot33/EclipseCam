@@ -1,4 +1,57 @@
 <resources>
+    <string name="app_name">EclipseCam</string>
+    <string name="tab_camera">Camera</string>
+    <string name="tab_live">Live</string>
+    <string name="tab_position">Position</string>
+    <string name="tab_gallery">Gallery</string>
+
+    <string name="screen_prepare_phone">Prepare your phone</string>
+    <string name="screen_live_status">Live eclipse status</string>
+    <string name="screen_position">Position against the eclipse</string>
+
+    <string name="status_ready">Ready</string>
+    <string name="status_needs_attention">Needs attention</string>
+    <string name="status_action_required">Action required</string>
+    <string name="status_reference_countdown">Reference countdown</string>
+
+    <string name="camera_access_needed">Camera access needed</string>
+    <string name="camera_starting">Starting camera</string>
+    <string name="camera_preview_ready">Live preview ready</string>
+    <string name="camera_unavailable">Camera unavailable</string>
+    <string name="camera_permission_message">EclipseCam needs camera access for local alignment guidance and capture.</string>
+    <string name="camera_starting_message">Connecting the preview to this screen and lifecycle.</string>
+    <string name="camera_streaming_message">Mount the phone securely. The preview stops automatically when this screen leaves the lifecycle.</string>
+    <string name="camera_permission_required">Permission required</string>
+    <string name="camera_binding">Binding CameraX</string>
+    <string name="camera_back_streaming">Back camera streaming</string>
+    <string name="camera_front_fallback_streaming">Front-camera fallback streaming</string>
+    <string name="camera_preview_label">Camera preview</string>
+    <string name="tripod_label">Tripod</string>
+    <string name="tripod_detail">Confirm before arming</string>
+    <string name="solar_filter_label">Solar filter</string>
+    <string name="solar_filter_detail">Required during partial phases</string>
+    <string name="scientific_model_label">Scientific model</string>
+    <string name="scientific_model_detail">Validated local circumstances available</string>
+    <string name="enable_camera">Enable camera</string>
+    <string name="automatic_capture_not_armed">Automatic capture not armed</string>
+    <string name="solar_safety_warning">Never look directly at the Sun without certified eclipse eye protection. Use an appropriate solar filter on the phone camera during partial phases.</string>
+
+    <string name="reference_eclipse_date">12 August 2026</string>
+    <string name="reference_event_passed">Reference event time has passed. Local circumstances still require validated GPS-based calculation.</string>
+    <string name="reference_countdown_format">Reference countdown\n%1$dd %2$dh %3$dm %4$ds</string>
+    <string name="local_circumstances_title">Local circumstances</string>
+    <string name="local_circumstances_body">Exact contacts, magnitude, obscuration, Sun altitude, and totality duration will be calculated locally from GPS after the validated Besselian engine is integrated.</string>
+    <string name="no_network_required_title">No network required</string>
+    <string name="no_network_required_body">The astronomy engine, countdowns, sensor processing, capture plan, and media remain on the phone. Google Maps is only an optional online basemap.</string>
+
+    <string name="location_ready">Location ready</string>
+    <string name="use_your_location">Use your location</string>
+    <string name="location_ready_message">EclipseCam can calculate your relationship to the path locally. The bold centreline and path limits will appear after scientific validation.</string>
+    <string name="location_permission_message">Allow location so EclipseCam can tell you where to stand and how much totality you can gain by moving.</string>
+    <string name="enable_location">Enable location</string>
+    <string name="observer_map_title">Observer-centred map</string>
+    <string name="observer_map_body">The finished map will prioritise you, the bold eclipse centreline, northern and southern limits, moving shadow, GPS uncertainty, and the best nearby position.</string>
+
     <string name="capture_notification_channel_name">Eclipse capture</string>
     <string name="capture_notification_channel_description">Keeps an armed eclipse capture session visible and controllable.</string>
     <string name="capture_notification_title">Eclipse capture armed</string>

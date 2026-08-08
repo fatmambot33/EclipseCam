@@ -1,0 +1,63 @@
+<resources>
+    <string name="app_name">EclipseCam</string>
+    <string name="tab_camera">Caméra</string>
+    <string name="tab_live">Direct</string>
+    <string name="tab_position">Position</string>
+    <string name="tab_gallery">Galerie</string>
+
+    <string name="screen_prepare_phone">Préparez votre téléphone</string>
+    <string name="screen_live_status">État de l’éclipse en direct</string>
+    <string name="screen_position">Votre position par rapport à l’éclipse</string>
+
+    <string name="status_ready">Prêt</string>
+    <string name="status_needs_attention">Vérification requise</string>
+    <string name="status_action_required">Action requise</string>
+    <string name="status_reference_countdown">Compte à rebours de référence</string>
+
+    <string name="camera_access_needed">Accès à la caméra requis</string>
+    <string name="camera_starting">Démarrage de la caméra</string>
+    <string name="camera_preview_ready">Aperçu en direct prêt</string>
+    <string name="camera_unavailable">Caméra indisponible</string>
+    <string name="camera_permission_message">EclipseCam a besoin de la caméra pour le guidage d’alignement local et la prise de vue.</string>
+    <string name="camera_starting_message">Connexion de l’aperçu à cet écran et à son cycle de vie.</string>
+    <string name="camera_streaming_message">Fixez solidement le téléphone. L’aperçu s’arrête automatiquement lorsque cet écran quitte son cycle de vie.</string>
+    <string name="camera_permission_required">Autorisation requise</string>
+    <string name="camera_binding">Connexion à CameraX</string>
+    <string name="camera_back_streaming">Caméra arrière active</string>
+    <string name="camera_front_fallback_streaming">Caméra avant de secours active</string>
+    <string name="camera_preview_label">Aperçu caméra</string>
+    <string name="tripod_label">Trépied</string>
+    <string name="tripod_detail">À confirmer avant l’armement</string>
+    <string name="solar_filter_label">Filtre solaire</string>
+    <string name="solar_filter_detail">Obligatoire pendant les phases partielles</string>
+    <string name="scientific_model_label">Modèle scientifique</string>
+    <string name="scientific_model_detail">Circonstances locales validées disponibles</string>
+    <string name="enable_camera">Autoriser la caméra</string>
+    <string name="automatic_capture_not_armed">Capture automatique non armée</string>
+    <string name="solar_safety_warning">Ne regardez jamais directement le Soleil sans protection oculaire certifiée pour les éclipses. Utilisez un filtre solaire adapté sur la caméra du téléphone pendant les phases partielles.</string>
+
+    <string name="reference_eclipse_date">12 août 2026</string>
+    <string name="reference_event_passed">L’heure de l’événement de référence est passée. Les circonstances locales nécessitent toujours un calcul GPS validé.</string>
+    <string name="reference_countdown_format">Compte à rebours de référence\n%1$d j %2$d h %3$d min %4$d s</string>
+    <string name="local_circumstances_title">Circonstances locales</string>
+    <string name="local_circumstances_body">Les contacts exacts, la magnitude, l’obscuration, la hauteur du Soleil et la durée de la totalité seront calculés localement à partir du GPS après intégration du moteur besselien validé.</string>
+    <string name="no_network_required_title">Aucun réseau requis</string>
+    <string name="no_network_required_body">Le moteur astronomique, les comptes à rebours, le traitement des capteurs, le plan de capture et les médias restent sur le téléphone. Google Maps n’est qu’un fond de carte en ligne facultatif.</string>
+
+    <string name="location_ready">Position disponible</string>
+    <string name="use_your_location">Utiliser votre position</string>
+    <string name="location_ready_message">EclipseCam peut calculer localement votre position par rapport à la trajectoire. La ligne centrale et les limites apparaîtront après validation scientifique.</string>
+    <string name="location_permission_message">Autorisez la localisation pour qu’EclipseCam puisse vous indiquer où vous placer et combien de totalité vous pouvez gagner en vous déplaçant.</string>
+    <string name="enable_location">Autoriser la localisation</string>
+    <string name="observer_map_title">Carte centrée sur l’observateur</string>
+    <string name="observer_map_body">La carte finale donnera la priorité à votre position, à la ligne centrale de l’éclipse, aux limites nord et sud, à l’ombre mobile, à l’incertitude GPS et au meilleur emplacement proche.</string>
+
+    <string name="capture_notification_channel_name">Capture de l’éclipse</string>
+    <string name="capture_notification_channel_description">Maintient une session de capture armée visible et contrôlable.</string>
+    <string name="capture_notification_title">Capture de l’éclipse armée</string>
+    <string name="capture_notification_running">La session de capture est en cours.</string>
+    <string name="capture_notification_paused">La session de capture est en pause.</string>
+    <string name="capture_notification_pause">Pause</string>
+    <string name="capture_notification_resume">Reprendre</string>
+    <string name="capture_notification_stop">Arrêter</string>
+</resources>
