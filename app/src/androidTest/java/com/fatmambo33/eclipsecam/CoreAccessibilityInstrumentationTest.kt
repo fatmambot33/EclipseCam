@@ -8,7 +8,9 @@ import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.unit.dp
 import org.junit.Rule
 import org.junit.Test
@@ -39,6 +41,7 @@ class CoreAccessibilityInstrumentationTest {
             )
 
         composeRule.onNodeWithTag("camera-primary-action")
+            .performScrollTo()
             .assertIsDisplayed()
             .assertHasClickAction()
             .assertHeightIsAtLeast(48.dp)
@@ -76,6 +79,6 @@ class CoreAccessibilityInstrumentationTest {
         composeRule.onNodeWithTag("hero-status").assertIsDisplayed()
 
         composeRule.onNodeWithTag("tab-gallery").performClick()
-        composeRule.onNodeWithTag("gallery-loading").assertIsDisplayed()
+        composeRule.onNodeWithText("Your eclipse sessions").assertIsDisplayed()
     }
 }
