@@ -12,6 +12,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
@@ -52,14 +53,8 @@ fun ObserverEclipseMap(
     modifier: Modifier = Modifier,
     tileSource: MapTileSource? = null,
 ) {
+    val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
-    val mapView = remember {
-        MapLibre.getInstance(lifecycleOwner.lifecycle.coroutineScope.coroutineContext[androidx.lifecycle.LifecycleOwner::class.java]?.let { null } ?: throw IllegalStateException())
-    }
-    @Suppress("UNUSED_VARIABLE")
-    val ignored = mapView
-
-    val context = androidx.compose.ui.platform.LocalContext.current
     val view = remember {
         MapLibre.getInstance(context.applicationContext)
         MapView(context).apply { onCreate(null) }
