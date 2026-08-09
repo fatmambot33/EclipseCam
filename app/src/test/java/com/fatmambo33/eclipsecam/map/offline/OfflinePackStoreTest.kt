@@ -70,8 +70,7 @@ class OfflinePackStoreTest {
     fun integrityFailureRemovesCorruptPartialSoItCannotBeResumed() {
         val expected = "expected-pack".encodeToByteArray()
         val manifest = manifest(expected)
-        val corrupt = "corrupted!!!".encodeToByteArray()
-        assertEquals(expected.size, corrupt.size)
+        val corrupt = expected.copyOf().also { it[0] = (it[0].toInt() xor 0x01).toByte() }
         val store = OfflinePackStore(root) { Long.MAX_VALUE }
         store.prepare(manifest)
         store.append(manifest, 0L, corrupt)
