@@ -43,6 +43,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -59,13 +60,22 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import com.fatmambo33.eclipsecam.camera.preview.CameraPreviewState
 import com.fatmambo33.eclipsecam.camera.preview.CameraPreviewSurface
 import com.fatmambo33.eclipsecam.camera.preview.PreviewLens
+import com.fatmambo33.eclipsecam.device.location.AndroidLocationRepository
+import com.fatmambo33.eclipsecam.device.location.ObserverGuidanceFlow
+import com.fatmambo33.eclipsecam.device.location.ObserverGuidanceState
+import com.fatmambo33.eclipsecam.map.EclipseMapScene
+import com.fatmambo33.eclipsecam.map.EclipseMapScene2026
+import com.fatmambo33.eclipsecam.map.GeoPoint
+import com.fatmambo33.eclipsecam.map.ObserverEclipseMap
 import com.fatmambo33.eclipsecam.media.LocalGalleryScreen
 import java.time.Duration
 import java.time.Instant
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.flowOf
 
 private val EclipseBackground = Color(0xFF070A12)
 private val EclipseCard = Color(0xFF111827)
@@ -287,28 +297,52 @@ private fun PositionScreen() {
     val context = LocalContext.current
     var locationGranted by remember {
         mutableStateOf(
-            context.checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED,
+            ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) ==
+                PackageManager.PERMISSION_GRANTED ||
+                ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) ==
+                PackageManager.PERMISSION_GRANTED,
         )
     }
+    val locationRepository = remember(context) { AndroidLocationRepository(context.applicationContext) }
+    val guidanceFlow = remember(locationGranted, locationRepository) {
+        if (locationGranted) {
+            ObserverGuidanceFlow(locationRepository).observe()
+        } else {
+            flowOf(ObserverGuidanceState.PermissionRequired)
+        }
+    }
+    val guidanceState by guidanceFlow.collectAsState(
+        initial = if (locationGranted) ObserverGuidanceState.Acquiring else ObserverGuidanceState.PermissionRequired,
+    )
     val locationPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
         locationGranted = it[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
             it[Manifest.permission.ACCESS_COARSE_LOCATION] == true
     }
+    val ready = guidanceState as? ObserverGuidanceState.Ready
+    val scene = EclipseMapScene(
+        overlay = EclipseMapScene2026.overlay,
+        observer = ready?.location?.point?.let { GeoPoint(it.latitude, it.longitude) },
+        observerAccuracyMeters = ready?.location?.accuracyMeters?.takeIf(Double::isFinite),
+    )
 
     ScreenColumn(stringResource(R.string.screen_position)) {
         HeroCard(
-            if (locationGranted) {
-                stringResource(R.string.location_ready)
-            } else {
-                stringResource(R.string.use_your_location)
+            when (guidanceState) {
+                is ObserverGuidanceState.Ready -> stringResource(R.string.location_ready)
+                ObserverGuidanceState.Acquiring -> stringResource(R.string.location_acquiring_title)
+                ObserverGuidanceState.Unavailable -> stringResource(R.string.location_unavailable_title)
+                is ObserverGuidanceState.Error -> stringResource(R.string.location_error_title)
+                ObserverGuidanceState.PermissionRequired -> stringResource(R.string.use_your_location)
             },
-            if (locationGranted) {
-                stringResource(R.string.location_ready_message)
-            } else {
-                stringResource(R.string.location_permission_message)
+            when (guidanceState) {
+                is ObserverGuidanceState.Ready -> stringResource(R.string.location_ready_message)
+                ObserverGuidanceState.Acquiring -> stringResource(R.string.location_acquiring_body)
+                ObserverGuidanceState.Unavailable -> stringResource(R.string.location_unavailable_body)
+                is ObserverGuidanceState.Error -> (guidanceState as ObserverGuidanceState.Error).message
+                ObserverGuidanceState.PermissionRequired -> stringResource(R.string.location_permission_message)
             },
-            if (locationGranted) EclipseReady else EclipseWarning,
-            if (locationGranted) {
+            if (guidanceState is ObserverGuidanceState.Ready) EclipseReady else EclipseWarning,
+            if (guidanceState is ObserverGuidanceState.Ready) {
                 stringResource(R.string.status_ready)
             } else {
                 stringResource(R.string.status_action_required)
@@ -332,10 +366,56 @@ private fun PositionScreen() {
             ) { Text(stringResource(R.string.enable_location)) }
         }
         Spacer(Modifier.height(12.dp))
-        InfoCard(
-            stringResource(R.string.observer_map_title),
-            stringResource(R.string.observer_map_body),
+        ObserverEclipseMap(
+            scene = scene,
+            modifier = Modifier.fillMaxWidth().height(300.dp),
         )
+        Spacer(Modifier.height(12.dp))
+        when (val state = guidanceState) {
+            is ObserverGuidanceState.Ready -> {
+                val guidance = state.guidance
+                val qualityWarnings = buildList {
+                    add(
+                        stringResource(
+                            if (guidance.insideReferencePath) {
+                                R.string.position_inside_path
+                            } else {
+                                R.string.position_outside_path
+                            },
+                        ),
+                    )
+                    if (state.stale) add(stringResource(R.string.position_location_stale))
+                    if (state.lowAccuracy) add(stringResource(R.string.position_location_low_accuracy))
+                }
+                InfoCard(
+                    stringResource(R.string.position_guidance_title),
+                    stringResource(
+                        R.string.position_guidance_format,
+                        guidance.distanceKm,
+                        guidance.bearingDegrees,
+                        guidance.referenceDurationSeconds,
+                        state.location.accuracyMeters,
+                        guidance.boundaryUncertaintyKm,
+                    ) + "\n" + qualityWarnings.joinToString(" "),
+                )
+            }
+            ObserverGuidanceState.Acquiring -> InfoCard(
+                stringResource(R.string.location_acquiring_title),
+                stringResource(R.string.location_acquiring_body),
+            )
+            ObserverGuidanceState.Unavailable -> InfoCard(
+                stringResource(R.string.location_unavailable_title),
+                stringResource(R.string.location_unavailable_body),
+            )
+            is ObserverGuidanceState.Error -> InfoCard(
+                stringResource(R.string.location_error_title),
+                state.message,
+            )
+            ObserverGuidanceState.PermissionRequired -> InfoCard(
+                stringResource(R.string.observer_map_title),
+                stringResource(R.string.observer_map_body),
+            )
+        }
     }
 }
 

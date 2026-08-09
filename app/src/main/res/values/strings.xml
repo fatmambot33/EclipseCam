@@ -46,11 +46,23 @@
 
     <string name="location_ready">Location ready</string>
     <string name="use_your_location">Use your location</string>
-    <string name="location_ready_message">EclipseCam can calculate your relationship to the path locally. The bold centreline and path limits will appear after scientific validation.</string>
+    <string name="location_ready_message">EclipseCam calculates your relationship to the validated reference path locally. GPS accuracy and path-limit uncertainty are shown separately.</string>
     <string name="location_permission_message">Allow location so EclipseCam can tell you where to stand and how much totality you can gain by moving.</string>
     <string name="enable_location">Enable location</string>
     <string name="observer_map_title">Observer-centred map</string>
-    <string name="observer_map_body">The finished map will prioritise you, the bold eclipse centreline, northern and southern limits, moving shadow, GPS uncertainty, and the best nearby position.</string>
+    <string name="observer_map_body">The eclipse centreline and limits are rendered locally even when no basemap is available.</string>
+    <string name="map_offline_no_basemap">Offline eclipse geometry • no basemap</string>
+    <string name="location_acquiring_title">Finding your position</string>
+    <string name="location_acquiring_body">The eclipse path is already available offline. Waiting for a local GPS fix.</string>
+    <string name="location_unavailable_title">Location unavailable</string>
+    <string name="location_unavailable_body">The eclipse path remains visible offline, but observer guidance needs an enabled location provider.</string>
+    <string name="location_error_title">Location error</string>
+    <string name="position_guidance_title">Move toward the centreline</string>
+    <string name="position_guidance_format">Nearest centreline: %1$.1f km • bearing %2$.0f°\nReference central duration: %3$.0f s • GPS accuracy: ±%4$.0f m\nPath-limit uncertainty: ±%5$.0f km</string>
+    <string name="position_inside_path">You are inside the reference path.</string>
+    <string name="position_outside_path">You are outside the reference path.</string>
+    <string name="position_location_stale">GPS fix is stale; guidance may be outdated.</string>
+    <string name="position_location_low_accuracy">GPS accuracy is low; wait for a better fix before moving.</string>
 
     <string name="capture_notification_channel_name">Eclipse capture</string>
     <string name="capture_notification_channel_description">Keeps an armed eclipse capture session visible and controllable.</string>

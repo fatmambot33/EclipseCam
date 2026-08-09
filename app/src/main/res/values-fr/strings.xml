@@ -46,11 +46,23 @@
 
     <string name="location_ready">Position disponible</string>
     <string name="use_your_location">Utiliser votre position</string>
-    <string name="location_ready_message">EclipseCam peut calculer localement votre position par rapport à la trajectoire. La ligne centrale et les limites apparaîtront après validation scientifique.</string>
+    <string name="location_ready_message">EclipseCam calcule localement votre position par rapport à la trajectoire de référence validée. La précision GPS et l’incertitude des limites sont indiquées séparément.</string>
     <string name="location_permission_message">Autorisez la localisation pour qu’EclipseCam puisse vous indiquer où vous placer et combien de totalité vous pouvez gagner en vous déplaçant.</string>
     <string name="enable_location">Autoriser la localisation</string>
     <string name="observer_map_title">Carte centrée sur l’observateur</string>
-    <string name="observer_map_body">La carte finale donnera la priorité à votre position, à la ligne centrale de l’éclipse, aux limites nord et sud, à l’ombre mobile, à l’incertitude GPS et au meilleur emplacement proche.</string>
+    <string name="observer_map_body">La ligne centrale et les limites de l’éclipse sont rendues localement même lorsqu’aucun fond de carte n’est disponible.</string>
+    <string name="map_offline_no_basemap">Géométrie de l’éclipse hors ligne • aucun fond de carte</string>
+    <string name="location_acquiring_title">Recherche de votre position</string>
+    <string name="location_acquiring_body">La trajectoire de l’éclipse est déjà disponible hors ligne. En attente d’une position GPS locale.</string>
+    <string name="location_unavailable_title">Localisation indisponible</string>
+    <string name="location_unavailable_body">La trajectoire reste visible hors ligne, mais le guidage de l’observateur nécessite un fournisseur de localisation actif.</string>
+    <string name="location_error_title">Erreur de localisation</string>
+    <string name="position_guidance_title">Se rapprocher de la ligne centrale</string>
+    <string name="position_guidance_format">Ligne centrale la plus proche : %1$.1f km • cap %2$.0f°\nDurée centrale de référence : %3$.0f s • précision GPS : ±%4$.0f m\nIncertitude des limites : ±%5$.0f km</string>
+    <string name="position_inside_path">Vous êtes à l’intérieur de la trajectoire de référence.</string>
+    <string name="position_outside_path">Vous êtes à l’extérieur de la trajectoire de référence.</string>
+    <string name="position_location_stale">La position GPS est ancienne ; le guidage peut être dépassé.</string>
+    <string name="position_location_low_accuracy">La précision GPS est faible ; attendez une meilleure position avant de vous déplacer.</string>
 
     <string name="capture_notification_channel_name">Capture de l’éclipse</string>
     <string name="capture_notification_channel_description">Maintient une session de capture armée visible et contrôlable.</string>
