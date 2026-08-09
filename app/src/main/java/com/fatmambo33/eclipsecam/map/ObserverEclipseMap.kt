@@ -15,10 +15,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import com.fatmambo33.eclipsecam.R
 import org.maplibre.android.MapLibre
 import org.maplibre.android.maps.MapView
 import org.maplibre.android.maps.Style
@@ -87,7 +89,7 @@ fun ObserverEclipseMap(
             modifier = Modifier.fillMaxSize(),
         )
         Text(
-            text = tileSource?.attribution ?: "Offline eclipse geometry • no basemap",
+            text = tileSource?.attribution ?: stringResource(R.string.map_offline_no_basemap),
             style = MaterialTheme.typography.labelSmall,
             color = Color.White,
             modifier = Modifier
