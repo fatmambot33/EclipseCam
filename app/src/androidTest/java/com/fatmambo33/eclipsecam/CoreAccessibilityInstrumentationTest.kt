@@ -48,6 +48,16 @@ class CoreAccessibilityInstrumentationTest {
     }
 
     @Test
+    fun positionPrimaryActionRemainsReachableAndLargeEnough() {
+        composeRule.onNodeWithTag("tab-position").performClick()
+        composeRule.onNodeWithTag("position-primary-action")
+            .performScrollTo()
+            .assertIsDisplayed()
+            .assertHasClickAction()
+            .assertHeightIsAtLeast(48.dp)
+    }
+
+    @Test
     fun liveAndPositionExposeMeaningfulStatusSemantics() {
         composeRule.onNodeWithTag("tab-live").performClick()
         composeRule.onNodeWithTag("hero-status")
