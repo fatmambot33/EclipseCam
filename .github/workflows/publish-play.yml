@@ -3,6 +3,11 @@ name: Publish to Google Play
 on:
   workflow_dispatch:
     inputs:
+      publish_to_play:
+        description: Publish the signed bundle to Google Play after building it
+        required: true
+        default: false
+        type: boolean
       track:
         description: Google Play track
         required: true
@@ -82,26 +87,41 @@ jobs:
           echo "version_code=$VERSION_CODE" >> "$GITHUB_OUTPUT"
           echo "version_name=$RELEASE_VERSION_NAME" >> "$GITHUB_OUTPUT"
 
+      - name: Verify signing secrets
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ECLIPSE_CAM_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.ECLIPSE_CAM_STORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ECLIPSE_CAM_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ECLIPSE_CAM_KEY_PASSWORD }}
+        run: |
+          test -n "$KEYSTORE_BASE64"
+          test -n "$STORE_PASSWORD"
+          test -n "$KEY_ALIAS"
+          test -n "$KEY_PASSWORD"
+
       - name: Restore upload keystore
         env:
           KEYSTORE_BASE64: ${{ secrets.ECLIPSE_CAM_KEYSTORE_BASE64 }}
         run: |
-          test -n "$KEYSTORE_BASE64"
           mkdir -p "$RUNNER_TEMP/eclipsecam-signing"
           printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/eclipsecam-signing/eclipsecam-upload.jks"
           chmod 600 "$RUNNER_TEMP/eclipsecam-signing/eclipsecam-upload.jks"
 
-      - name: Verify required secrets
+      - name: Verify upload key and export public certificate
         env:
-          STORE_PASSWORD: ${{ secrets.ECLIPSE_CAM_STORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.ECLIPSE_CAM_KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.ECLIPSE_CAM_KEY_PASSWORD }}
-          PLAY_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          ECLIPSE_CAM_STORE_PASSWORD: ${{ secrets.ECLIPSE_CAM_STORE_PASSWORD }}
+          ECLIPSE_CAM_KEY_ALIAS: ${{ secrets.ECLIPSE_CAM_KEY_ALIAS }}
         run: |
-          test -n "$STORE_PASSWORD"
-          test -n "$KEY_ALIAS"
-          test -n "$KEY_PASSWORD"
-          test -n "$PLAY_JSON"
+          keytool -list \
+            -keystore "$RUNNER_TEMP/eclipsecam-signing/eclipsecam-upload.jks" \
+            -alias "$ECLIPSE_CAM_KEY_ALIAS" \
+            -storepass:env ECLIPSE_CAM_STORE_PASSWORD >/dev/null
+          keytool -exportcert -rfc \
+            -keystore "$RUNNER_TEMP/eclipsecam-signing/eclipsecam-upload.jks" \
+            -alias "$ECLIPSE_CAM_KEY_ALIAS" \
+            -storepass:env ECLIPSE_CAM_STORE_PASSWORD \
+            -file "$RUNNER_TEMP/eclipsecam-signing/upload-certificate.pem"
+          keytool -printcert -file "$RUNNER_TEMP/eclipsecam-signing/upload-certificate.pem"
 
       - name: Test, lint and build signed bundle
         env:
@@ -121,11 +141,20 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
+      - name: Upload public upload certificate
+        uses: actions/upload-artifact@v4
+        with:
+          name: EclipseCam-upload-certificate
+          path: ${{ runner.temp }}/eclipsecam-signing/upload-certificate.pem
+          if-no-files-found: error
+          retention-days: 30
+
       - name: Remove keystore
         if: always()
         run: rm -rf "$RUNNER_TEMP/eclipsecam-signing"
 
   publish:
+    if: github.event_name == 'push' || inputs.publish_to_play
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -133,6 +162,11 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Verify Play publishing secret
+        env:
+          PLAY_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+        run: test -n "$PLAY_JSON"
 
       - name: Download signed bundle
         uses: actions/download-artifact@v4
