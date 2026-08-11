@@ -22,8 +22,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.fatmambo33.eclipsecam.R
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 
@@ -76,18 +78,19 @@ fun LocalMontageCard(
             colors = CardDefaults.cardColors(containerColor = MontageCardBackground),
         ) {
             Column(Modifier.padding(18.dp)) {
-                Text("Phase-aware montage", fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.gallery_montage_title), fontWeight = FontWeight.Bold)
                 Text(
-                    "Choose which classified representatives to include. Missing phases stay visible as “Not captured”; EclipseCam never duplicates a neighbouring frame to fill a gap.",
+                    stringResource(R.string.gallery_montage_body),
                     modifier = Modifier.padding(top = 8.dp, bottom = 12.dp),
                     color = MontageMuted,
                 )
 
                 MontageSlot.entries.forEach { slot ->
                     val asset = availableSlots[slot]
+                    val slotLabel = montageSlotLabelResource(slot)
                     if (asset == null) {
                         Text(
-                            "${montageSlotLabel(slot)} • Missing",
+                            stringResource(R.string.gallery_montage_missing_format, slotLabel),
                             modifier = Modifier.padding(vertical = 4.dp).testTag("montage-slot-${slot.name.lowercase()}"),
                             color = MontageMuted,
                         )
@@ -101,7 +104,7 @@ fun LocalMontageCard(
                                     includedSlots + slot
                                 }
                             },
-                            label = { Text(montageSlotLabel(slot)) },
+                            label = { Text(slotLabel) },
                             modifier = Modifier.testTag("montage-slot-${slot.name.lowercase()}"),
                         )
                         Text(
@@ -116,17 +119,25 @@ fun LocalMontageCard(
                 Spacer(Modifier.height(8.dp))
                 when (val current = state) {
                     MontageUiState.Idle -> Text(
-                        if (hasMontage) "A complete montage is available." else "Ready to generate locally.",
+                        if (hasMontage) {
+                            stringResource(R.string.gallery_montage_available)
+                        } else {
+                            stringResource(R.string.gallery_montage_ready)
+                        },
                         color = MontageMuted,
                         modifier = Modifier.testTag("montage-status"),
                     )
                     MontageUiState.Rendering -> Text(
-                        "Generating montage…",
+                        stringResource(R.string.gallery_montage_generating),
                         color = MontageAccent,
                         modifier = Modifier.testTag("montage-status"),
                     )
                     is MontageUiState.Complete -> Text(
-                        "Complete • ${current.frameCount} selected • ${current.missingCount} missing",
+                        stringResource(
+                            R.string.gallery_montage_complete_format,
+                            current.frameCount,
+                            current.missingCount,
+                        ),
                         color = MontageReady,
                         modifier = Modifier.testTag("montage-status"),
                     )
@@ -162,7 +173,13 @@ fun LocalMontageCard(
                     },
                     modifier = Modifier.testTag("montage-generate"),
                 ) {
-                    Text(if (hasMontage) "Regenerate montage" else "Generate montage")
+                    Text(
+                        if (hasMontage) {
+                            stringResource(R.string.gallery_montage_regenerate)
+                        } else {
+                            stringResource(R.string.gallery_montage_generate)
+                        },
+                    )
                 }
             }
         }
@@ -171,6 +188,17 @@ fun LocalMontageCard(
         LocalExportShareCard(session)
     }
 }
+
+@Composable
+private fun montageSlotLabelResource(slot: MontageSlot): String = stringResource(
+    when (slot) {
+        MontageSlot.PARTIAL_EARLY -> R.string.gallery_montage_slot_partial_early
+        MontageSlot.CONTACT_EARLY -> R.string.gallery_montage_slot_contact_early
+        MontageSlot.TOTALITY -> R.string.gallery_montage_slot_totality
+        MontageSlot.CONTACT_LATE -> R.string.gallery_montage_slot_contact_late
+        MontageSlot.PARTIAL_LATE -> R.string.gallery_montage_slot_partial_late
+    },
+)
 
 fun montageSlotLabel(slot: MontageSlot): String = when (slot) {
     MontageSlot.PARTIAL_EARLY -> "Partial • early"

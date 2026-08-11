@@ -72,4 +72,19 @@
     <string name="capture_notification_pause">Pause</string>
     <string name="capture_notification_resume">Reprendre</string>
     <string name="capture_notification_stop">Arrêter</string>
+
+    <string name="gallery_montage_title">Montage par phase</string>
+    <string name="gallery_montage_body">Choisissez les images représentatives à inclure. Les phases absentes restent indiquées comme « Non capturées » ; EclipseCam ne duplique jamais une image voisine pour combler un manque.</string>
+    <string name="gallery_montage_missing_format">%1$s • Manquante</string>
+    <string name="gallery_montage_available">Un montage complet est disponible.</string>
+    <string name="gallery_montage_ready">Prêt à générer localement.</string>
+    <string name="gallery_montage_generating">Génération du montage…</string>
+    <string name="gallery_montage_complete_format">Terminé • %1$d sélectionnées • %2$d manquantes</string>
+    <string name="gallery_montage_regenerate">Regénérer le montage</string>
+    <string name="gallery_montage_generate">Générer le montage</string>
+    <string name="gallery_montage_slot_partial_early">Phase partielle • début</string>
+    <string name="gallery_montage_slot_contact_early">Rafale de contact • début</string>
+    <string name="gallery_montage_slot_totality">Image représentative de la totalité</string>
+    <string name="gallery_montage_slot_contact_late">Rafale de contact • fin</string>
+    <string name="gallery_montage_slot_partial_late">Phase partielle • fin</string>
 </resources>

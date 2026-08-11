@@ -72,4 +72,19 @@
     <string name="capture_notification_pause">Pause</string>
     <string name="capture_notification_resume">Resume</string>
     <string name="capture_notification_stop">Stop</string>
+
+    <string name="gallery_montage_title">Phase-aware montage</string>
+    <string name="gallery_montage_body">Choose which classified representatives to include. Missing phases stay visible as “Not captured”; EclipseCam never duplicates a neighbouring frame to fill a gap.</string>
+    <string name="gallery_montage_missing_format">%1$s • Missing</string>
+    <string name="gallery_montage_available">A complete montage is available.</string>
+    <string name="gallery_montage_ready">Ready to generate locally.</string>
+    <string name="gallery_montage_generating">Generating montage…</string>
+    <string name="gallery_montage_complete_format">Complete • %1$d selected • %2$d missing</string>
+    <string name="gallery_montage_regenerate">Regenerate montage</string>
+    <string name="gallery_montage_generate">Generate montage</string>
+    <string name="gallery_montage_slot_partial_early">Partial • early</string>
+    <string name="gallery_montage_slot_contact_early">Contact burst • early</string>
+    <string name="gallery_montage_slot_totality">Totality representative</string>
+    <string name="gallery_montage_slot_contact_late">Contact burst • late</string>
+    <string name="gallery_montage_slot_partial_late">Partial • late</string>
 </resources>
