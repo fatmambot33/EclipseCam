@@ -10,6 +10,8 @@ EclipseCam is adopting Android string resources as the source of truth for user-
 - The reference eclipse date and countdown format are locale-specific resources rather than hard-coded UI text.
 - Gallery phase-aware montage headings, guidance, state, phase-slot labels, and generate/regenerate controls are resource-backed in English and French.
 - Instrumentation verifies representative French navigation, safety, permission, countdown, capture-notification, and Gallery montage resources, including formatted montage status text.
+- JVM validation now enforces exact English/French translatable-string key parity, rejects duplicate string names, and verifies matching Android formatter signatures so a translation cannot silently drop or change a runtime argument.
+- `.github/scripts/verify-localization.py` provides the same resource-contract check for lightweight local or CI use without an Android emulator.
 - Android lint remains a required CI gate and should reject new hard-coded Android UI strings where supported.
 
 Safety translations intentionally preserve the same conservative requirement as English: certified eye protection is required for direct viewing and an appropriate camera solar filter is required during partial phases.
