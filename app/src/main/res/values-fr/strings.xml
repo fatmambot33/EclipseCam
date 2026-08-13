@@ -4,16 +4,13 @@
     <string name="tab_live">Direct</string>
     <string name="tab_position">Position</string>
     <string name="tab_gallery">Galerie</string>
-
     <string name="screen_prepare_phone">Préparez votre téléphone</string>
     <string name="screen_live_status">État de l’éclipse en direct</string>
     <string name="screen_position">Votre position par rapport à l’éclipse</string>
-
     <string name="status_ready">Prêt</string>
     <string name="status_needs_attention">Vérification requise</string>
     <string name="status_action_required">Action requise</string>
     <string name="status_reference_countdown">Compte à rebours de référence</string>
-
     <string name="camera_access_needed">Accès à la caméra requis</string>
     <string name="camera_starting">Démarrage de la caméra</string>
     <string name="camera_preview_ready">Aperçu en direct prêt</string>
@@ -35,7 +32,6 @@
     <string name="enable_camera">Autoriser la caméra</string>
     <string name="automatic_capture_not_armed">Capture automatique non armée</string>
     <string name="solar_safety_warning">Ne regardez jamais directement le Soleil sans protection oculaire certifiée pour les éclipses. Utilisez un filtre solaire adapté sur la caméra du téléphone pendant les phases partielles.</string>
-
     <string name="reference_eclipse_date">12 août 2026</string>
     <string name="reference_event_passed">L’heure de l’événement de référence est passée. Les circonstances locales nécessitent toujours un calcul GPS validé.</string>
     <string name="reference_countdown_format">Compte à rebours de référence\n%1$d j %2$d h %3$d min %4$d s</string>
@@ -43,7 +39,6 @@
     <string name="local_circumstances_body">Les contacts exacts, la magnitude, l’obscuration, la hauteur du Soleil et la durée de la totalité seront calculés localement à partir du GPS après intégration du moteur besselien validé.</string>
     <string name="no_network_required_title">Aucun réseau requis</string>
     <string name="no_network_required_body">Le moteur astronomique, les comptes à rebours, le traitement des capteurs, le plan de capture et les médias restent sur le téléphone. Google Maps n’est qu’un fond de carte en ligne facultatif.</string>
-
     <string name="location_ready">Position disponible</string>
     <string name="use_your_location">Utiliser votre position</string>
     <string name="location_ready_message">EclipseCam calcule localement votre position par rapport à la trajectoire de référence validée. La précision GPS et l’incertitude des limites sont indiquées séparément.</string>
@@ -63,7 +58,6 @@
     <string name="position_outside_path">Vous êtes à l’extérieur de la trajectoire de référence.</string>
     <string name="position_location_stale">La position GPS est ancienne ; le guidage peut être dépassé.</string>
     <string name="position_location_low_accuracy">La précision GPS est faible ; attendez une meilleure position avant de vous déplacer.</string>
-
     <string name="capture_notification_channel_name">Capture de l’éclipse</string>
     <string name="capture_notification_channel_description">Maintient une session de capture armée visible et contrôlable.</string>
     <string name="capture_notification_title">Capture de l’éclipse armée</string>
@@ -72,7 +66,6 @@
     <string name="capture_notification_pause">Pause</string>
     <string name="capture_notification_resume">Reprendre</string>
     <string name="capture_notification_stop">Arrêter</string>
-
     <string name="gallery_montage_title">Montage par phase</string>
     <string name="gallery_montage_body">Choisissez les images représentatives à inclure. Les phases absentes restent indiquées comme « Non capturées » ; EclipseCam ne duplique jamais une image voisine pour combler un manque.</string>
     <string name="gallery_montage_missing_format">%1$s • Manquante</string>
@@ -87,4 +80,35 @@
     <string name="gallery_montage_slot_totality">Image représentative de la totalité</string>
     <string name="gallery_montage_slot_contact_late">Rafale de contact • fin</string>
     <string name="gallery_montage_slot_partial_late">Phase partielle • fin</string>
+    <string name="gallery_export_title">Exporter et partager</string>
+    <string name="gallery_export_body">Rien ne quitte EclipseCam automatiquement. Choisissez un média, décidez si les données de localisation JPEG sont conservées, puis exportez ou partagez-le explicitement.</string>
+    <string name="gallery_export_empty">Aucun média local valide n’est disponible pour l’export.</string>
+    <string name="gallery_export_asset_position">Média %1$d sur %2$d</string>
+    <string name="gallery_export_previous">Précédent</string>
+    <string name="gallery_export_next">Suivant</string>
+    <string name="gallery_export_location_title">Données de localisation JPEG</string>
+    <string name="gallery_export_location_remove">Supprimer</string>
+    <string name="gallery_export_location_preserve">Conserver</string>
+    <string name="gallery_export_privacy_remove">Confidentialité par défaut : le JPEG est décodé puis réencodé sans métadonnées de conteneur avant l’export.</string>
+    <string name="gallery_export_privacy_preserve">Les octets JPEG d’origine, y compris les éventuelles métadonnées intégrées, sont conservés dans la copie exportée.</string>
+    <string name="gallery_export_privacy_non_jpeg">Ce réglage ne modifie que les exports JPEG ; ce média est copié sans modification.</string>
+    <string name="gallery_export_choose_destination">Choisir la destination d’export</string>
+    <string name="gallery_export_save_library">Enregistrer dans la photothèque</string>
+    <string name="gallery_export_share_android">Partager avec Android…</string>
+    <string name="gallery_export_share_chooser">Partager un média EclipseCam</string>
+    <string name="gallery_export_ready">Prêt.</string>
+    <string name="gallery_export_cancelled">Export annulé ; aucune destination intermédiaire n’est conservée.</string>
+    <string name="gallery_export_preparing_private">Préparation de la copie privée…</string>
+    <string name="gallery_export_preparing_library">Préparation de l’export vers la photothèque…</string>
+    <string name="gallery_export_preparing_share">Préparation de la copie à partager…</string>
+    <string name="gallery_export_publishing">Publication vers la destination choisie…</string>
+    <string name="gallery_export_complete">Export terminé.</string>
+    <string name="gallery_export_saved_library">Enregistré dans la photothèque de l’appareil.</string>
+    <string name="gallery_export_share_opened">La feuille de partage Android a été ouverte suite à votre action explicite.</string>
+    <string name="gallery_export_asset_detail">%1$s • %2$d octets</string>
+    <string name="gallery_asset_original">Capture d’origine</string>
+    <string name="gallery_asset_timelapse">Timelapse</string>
+    <string name="gallery_asset_montage">Montage</string>
+    <string name="gallery_asset_report">Rapport de capture</string>
+    <string name="gallery_asset_generated">Média généré</string>
 </resources>
