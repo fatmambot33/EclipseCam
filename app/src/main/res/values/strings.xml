@@ -87,4 +87,36 @@
     <string name="gallery_montage_slot_totality">Totality representative</string>
     <string name="gallery_montage_slot_contact_late">Contact burst • late</string>
     <string name="gallery_montage_slot_partial_late">Partial • late</string>
+
+    <string name="gallery_export_title">Export &amp; share</string>
+    <string name="gallery_export_body">Nothing leaves EclipseCam automatically. Choose an asset, choose whether JPEG location metadata is preserved, then explicitly export or share it.</string>
+    <string name="gallery_export_empty">No valid local assets are available to export.</string>
+    <string name="gallery_export_asset_position">Asset %1$d of %2$d</string>
+    <string name="gallery_export_previous">Previous</string>
+    <string name="gallery_export_next">Next</string>
+    <string name="gallery_export_location_title">JPEG location metadata</string>
+    <string name="gallery_export_location_remove">Remove</string>
+    <string name="gallery_export_location_preserve">Preserve</string>
+    <string name="gallery_export_privacy_remove">Privacy default: the JPEG is decoded and re-encoded without container metadata before export.</string>
+    <string name="gallery_export_privacy_preserve">The original JPEG bytes, including any embedded metadata, are preserved in the export copy.</string>
+    <string name="gallery_export_privacy_non_jpeg">This setting only changes JPEG exports; this asset is copied unchanged.</string>
+    <string name="gallery_export_choose_destination">Choose export destination</string>
+    <string name="gallery_export_save_library">Save to device library</string>
+    <string name="gallery_export_share_android">Share with Android…</string>
+    <string name="gallery_export_share_chooser">Share EclipseCam media</string>
+    <string name="gallery_export_ready">Ready.</string>
+    <string name="gallery_export_cancelled">Export cancelled; no staged destination is retained.</string>
+    <string name="gallery_export_preparing_private">Preparing private export copy…</string>
+    <string name="gallery_export_preparing_library">Preparing device-library export…</string>
+    <string name="gallery_export_preparing_share">Preparing explicit share copy…</string>
+    <string name="gallery_export_publishing">Publishing to selected destination…</string>
+    <string name="gallery_export_complete">Export complete.</string>
+    <string name="gallery_export_saved_library">Saved to the device media library.</string>
+    <string name="gallery_export_share_opened">Android share sheet opened from your explicit share action.</string>
+    <string name="gallery_export_asset_detail">%1$s • %2$d bytes</string>
+    <string name="gallery_asset_original">Original capture</string>
+    <string name="gallery_asset_timelapse">Timelapse</string>
+    <string name="gallery_asset_montage">Montage</string>
+    <string name="gallery_asset_report">Capture report</string>
+    <string name="gallery_asset_generated">Generated output</string>
 </resources>

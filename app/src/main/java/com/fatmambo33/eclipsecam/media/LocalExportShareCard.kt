@@ -30,8 +30,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.fatmambo33.eclipsecam.R
 import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -64,6 +66,15 @@ fun LocalExportShareCard(session: LocalCaptureSession) {
     val stager = remember { LocalExportStager(AndroidJpegLocationMetadataSanitizer()) }
     val stagingRoot = remember(context) { File(context.cacheDir, "shared-exports") }
 
+    val publishingMessage = stringResource(R.string.gallery_export_publishing)
+    val completeMessage = stringResource(R.string.gallery_export_complete)
+    val preparingPrivateMessage = stringResource(R.string.gallery_export_preparing_private)
+    val preparingLibraryMessage = stringResource(R.string.gallery_export_preparing_library)
+    val savedLibraryMessage = stringResource(R.string.gallery_export_saved_library)
+    val preparingShareMessage = stringResource(R.string.gallery_export_preparing_share)
+    val shareChooserTitle = stringResource(R.string.gallery_export_share_chooser)
+    val shareOpenedMessage = stringResource(R.string.gallery_export_share_opened)
+
     val safLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         val export = pendingSafExport
         pendingSafExport = null
@@ -73,11 +84,11 @@ fun LocalExportShareCard(session: LocalCaptureSession) {
             state = ExportUiState.Cancelled
         } else {
             scope.launch {
-                state = ExportUiState.Working("Publishing to selected destination…")
+                state = ExportUiState.Working(publishingMessage)
                 val publish = AndroidSafLocalExporter(context.contentResolver).publish(export, destination)
                 export.cleanup()
                 state = when (publish) {
-                    is ExternalPublishResult.Completed -> ExportUiState.Complete("Export complete.")
+                    is ExternalPublishResult.Completed -> ExportUiState.Complete(completeMessage)
                     is ExternalPublishResult.Failed -> ExportUiState.Failed(publish.reason)
                 }
             }
@@ -90,15 +101,15 @@ fun LocalExportShareCard(session: LocalCaptureSession) {
         colors = CardDefaults.cardColors(containerColor = ExportCardBackground),
     ) {
         Column(Modifier.padding(18.dp)) {
-            Text("Export & share", fontWeight = FontWeight.Bold)
+            Text(stringResource(R.string.gallery_export_title), fontWeight = FontWeight.Bold)
             Text(
-                "Nothing leaves EclipseCam automatically. Choose an asset, choose whether JPEG location metadata is preserved, then explicitly export or share it.",
+                stringResource(R.string.gallery_export_body),
                 modifier = Modifier.padding(top = 8.dp, bottom = 12.dp),
                 color = ExportMuted,
             )
 
             if (assets.isEmpty()) {
-                Text("No valid local assets are available to export.", color = ExportMuted)
+                Text(stringResource(R.string.gallery_export_empty), color = ExportMuted)
                 return@Column
             }
             if (selectedIndex !in assets.indices) selectedIndex = 0
@@ -106,13 +117,17 @@ fun LocalExportShareCard(session: LocalCaptureSession) {
             val mimeType = checkNotNull(localAssetMimeType(selected.file))
 
             Text(
-                "Asset ${selectedIndex + 1} of ${assets.size}",
+                stringResource(R.string.gallery_export_asset_position, selectedIndex + 1, assets.size),
                 color = ExportAccent,
                 modifier = Modifier.testTag("export-asset-position"),
             )
             Text(selected.file.name, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 4.dp))
             Text(
-                "${assetKindLabel(selected.kind)} • ${selected.sizeBytes} bytes",
+                stringResource(
+                    R.string.gallery_export_asset_detail,
+                    assetKindLabel(selected.kind),
+                    selected.sizeBytes,
+                ),
                 color = ExportMuted,
                 modifier = Modifier.padding(top = 2.dp, bottom = 8.dp),
             )
@@ -121,39 +136,39 @@ fun LocalExportShareCard(session: LocalCaptureSession) {
                     enabled = selectedIndex > 0 && state !is ExportUiState.Working,
                     onClick = { selectedIndex -= 1 },
                     modifier = Modifier.testTag("export-previous"),
-                ) { Text("Previous") }
+                ) { Text(stringResource(R.string.gallery_export_previous)) }
                 OutlinedButton(
                     enabled = selectedIndex < assets.lastIndex && state !is ExportUiState.Working,
                     onClick = { selectedIndex += 1 },
                     modifier = Modifier.testTag("export-next"),
-                ) { Text("Next") }
+                ) { Text(stringResource(R.string.gallery_export_next)) }
             }
 
             Spacer(Modifier.height(12.dp))
-            Text("JPEG location metadata", fontWeight = FontWeight.SemiBold)
+            Text(stringResource(R.string.gallery_export_location_title), fontWeight = FontWeight.SemiBold)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 FilterChip(
                     selected = locationPolicy == LocationMetadataPolicy.REMOVE,
                     onClick = { locationPolicy = LocationMetadataPolicy.REMOVE },
-                    label = { Text("Remove") },
+                    label = { Text(stringResource(R.string.gallery_export_location_remove)) },
                     modifier = Modifier.testTag("export-location-remove"),
                 )
                 FilterChip(
                     selected = locationPolicy == LocationMetadataPolicy.PRESERVE,
                     onClick = { locationPolicy = LocationMetadataPolicy.PRESERVE },
-                    label = { Text("Preserve") },
+                    label = { Text(stringResource(R.string.gallery_export_location_preserve)) },
                     modifier = Modifier.testTag("export-location-preserve"),
                 )
             }
             Text(
                 if (mimeType == "image/jpeg") {
                     if (locationPolicy == LocationMetadataPolicy.REMOVE) {
-                        "Privacy default: the JPEG is decoded and re-encoded without container metadata before export."
+                        stringResource(R.string.gallery_export_privacy_remove)
                     } else {
-                        "The original JPEG bytes, including any embedded metadata, are preserved in the export copy."
+                        stringResource(R.string.gallery_export_privacy_preserve)
                     }
                 } else {
-                    "This setting only changes JPEG exports; this asset is copied unchanged."
+                    stringResource(R.string.gallery_export_privacy_non_jpeg)
                 },
                 color = ExportMuted,
             )
@@ -163,7 +178,7 @@ fun LocalExportShareCard(session: LocalCaptureSession) {
                 enabled = state !is ExportUiState.Working,
                 onClick = {
                     scope.launch {
-                        state = ExportUiState.Working("Preparing private export copy…")
+                        state = ExportUiState.Working(preparingPrivateMessage)
                         when (val staged = stage(stager, selected, locationPolicy, stagingRoot)) {
                             is LocalExportStageResult.Failed -> state = ExportUiState.Failed(staged.reason)
                             is LocalExportStageResult.Ready -> {
@@ -179,7 +194,7 @@ fun LocalExportShareCard(session: LocalCaptureSession) {
                     }
                 },
                 modifier = Modifier.fillMaxWidth().testTag("export-destination"),
-            ) { Text("Choose export destination") }
+            ) { Text(stringResource(R.string.gallery_export_choose_destination)) }
 
             Spacer(Modifier.height(8.dp))
             Button(
@@ -188,7 +203,7 @@ fun LocalExportShareCard(session: LocalCaptureSession) {
                     isMediaStoreExportable(mimeType),
                 onClick = {
                     scope.launch {
-                        state = ExportUiState.Working("Preparing device-library export…")
+                        state = ExportUiState.Working(preparingLibraryMessage)
                         when (val staged = stage(stager, selected, locationPolicy, stagingRoot)) {
                             is LocalExportStageResult.Failed -> state = ExportUiState.Failed(staged.reason)
                             is LocalExportStageResult.Ready -> {
@@ -196,7 +211,7 @@ fun LocalExportShareCard(session: LocalCaptureSession) {
                                     .publish(staged.export)
                                 staged.export.cleanup()
                                 state = when (publish) {
-                                    is ExternalPublishResult.Completed -> ExportUiState.Complete("Saved to the device media library.")
+                                    is ExternalPublishResult.Completed -> ExportUiState.Complete(savedLibraryMessage)
                                     is ExternalPublishResult.Failed -> ExportUiState.Failed(publish.reason)
                                 }
                             }
@@ -204,14 +219,14 @@ fun LocalExportShareCard(session: LocalCaptureSession) {
                     }
                 },
                 modifier = Modifier.fillMaxWidth().testTag("export-media-store"),
-            ) { Text("Save to device library") }
+            ) { Text(stringResource(R.string.gallery_export_save_library)) }
 
             Spacer(Modifier.height(8.dp))
             Button(
                 enabled = state !is ExportUiState.Working,
                 onClick = {
                     scope.launch {
-                        state = ExportUiState.Working("Preparing explicit share copy…")
+                        state = ExportUiState.Working(preparingShareMessage)
                         pruneOldShareStaging(stagingRoot)
                         when (val staged = stage(stager, selected, locationPolicy, stagingRoot)) {
                             is LocalExportStageResult.Failed -> state = ExportUiState.Failed(staged.reason)
@@ -222,22 +237,30 @@ fun LocalExportShareCard(session: LocalCaptureSession) {
                                     staged.export.displayName,
                                     staged.export.mimeType,
                                 )
-                                context.startActivity(Intent.createChooser(send, "Share EclipseCam media"))
-                                state = ExportUiState.Complete("Android share sheet opened from your explicit share action.")
+                                context.startActivity(Intent.createChooser(send, shareChooserTitle))
+                                state = ExportUiState.Complete(shareOpenedMessage)
                             }
                         }
                     }
                 },
                 modifier = Modifier.fillMaxWidth().testTag("export-share"),
-            ) { Text("Share with Android…") }
+            ) { Text(stringResource(R.string.gallery_export_share_android)) }
 
             Spacer(Modifier.height(10.dp))
             when (val current = state) {
-                ExportUiState.Idle -> Text("Ready.", color = ExportMuted, modifier = Modifier.testTag("export-status"))
+                ExportUiState.Idle -> Text(
+                    stringResource(R.string.gallery_export_ready),
+                    color = ExportMuted,
+                    modifier = Modifier.testTag("export-status"),
+                )
                 is ExportUiState.Working -> Text(current.action, color = ExportAccent, modifier = Modifier.testTag("export-status"))
                 is ExportUiState.Complete -> Text(current.message, color = ExportReady, modifier = Modifier.testTag("export-status"))
                 is ExportUiState.Failed -> Text(current.reason, color = ExportFailed, modifier = Modifier.testTag("export-status"))
-                ExportUiState.Cancelled -> Text("Export cancelled; no staged destination is retained.", color = ExportMuted, modifier = Modifier.testTag("export-status"))
+                ExportUiState.Cancelled -> Text(
+                    stringResource(R.string.gallery_export_cancelled),
+                    color = ExportMuted,
+                    modifier = Modifier.testTag("export-status"),
+                )
             }
         }
     }
@@ -259,12 +282,15 @@ private suspend fun pruneOldShareStaging(root: File) = withContext(Dispatchers.I
     }
 }
 
-private fun assetKindLabel(kind: LocalSessionAssetKind): String = when (kind) {
-    LocalSessionAssetKind.ORIGINAL_CAPTURE -> "Original capture"
-    LocalSessionAssetKind.TIMELAPSE -> "Timelapse"
-    LocalSessionAssetKind.MONTAGE -> "Montage"
-    LocalSessionAssetKind.CAPTURE_REPORT -> "Capture report"
-    LocalSessionAssetKind.GENERATED -> "Generated output"
-}
+@Composable
+private fun assetKindLabel(kind: LocalSessionAssetKind): String = stringResource(
+    when (kind) {
+        LocalSessionAssetKind.ORIGINAL_CAPTURE -> R.string.gallery_asset_original
+        LocalSessionAssetKind.TIMELAPSE -> R.string.gallery_asset_timelapse
+        LocalSessionAssetKind.MONTAGE -> R.string.gallery_asset_montage
+        LocalSessionAssetKind.CAPTURE_REPORT -> R.string.gallery_asset_report
+        LocalSessionAssetKind.GENERATED -> R.string.gallery_asset_generated
+    },
+)
 
 private const val SHARE_STAGING_RETENTION_MS = 24L * 60L * 60L * 1_000L

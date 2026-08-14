@@ -13,7 +13,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class CoreLocalizationInstrumentationTest {
     @Test
-    fun frenchResourcesCoverCoreSafetyNavigationCaptureAndGalleryMontage() {
+    fun frenchResourcesCoverCoreSafetyNavigationCaptureAndGallery() {
         val context = localizedContext(Locale.FRENCH)
 
         assertEquals("Caméra", context.getString(R.string.tab_camera))
@@ -27,8 +27,14 @@ class CoreLocalizationInstrumentationTest {
             "Phase partielle • début",
             context.getString(R.string.gallery_montage_slot_partial_early),
         )
+        assertEquals("Exporter et partager", context.getString(R.string.gallery_export_title))
+        assertEquals("Supprimer", context.getString(R.string.gallery_export_location_remove))
+        assertEquals("Choisir la destination d’export", context.getString(R.string.gallery_export_choose_destination))
+        assertEquals("Partager un média EclipseCam", context.getString(R.string.gallery_export_share_chooser))
         assertFalse(context.getString(R.string.solar_safety_warning).contains("Never look"))
         assertFalse(context.getString(R.string.gallery_montage_body).contains("Choose which"))
+        assertFalse(context.getString(R.string.gallery_export_body).contains("Nothing leaves"))
+        assertFalse(context.getString(R.string.gallery_export_privacy_remove).contains("Privacy default"))
     }
 
     @Test
@@ -47,7 +53,7 @@ class CoreLocalizationInstrumentationTest {
     }
 
     @Test
-    fun galleryMontageFormattingUsesTheActiveLocaleResources() {
+    fun galleryFormattingUsesTheActiveLocaleResources() {
         val english = localizedContext(Locale.ENGLISH)
         val french = localizedContext(Locale.FRENCH)
 
@@ -58,6 +64,14 @@ class CoreLocalizationInstrumentationTest {
         assertEquals(
             "Terminé • 4 sélectionnées • 1 manquantes",
             french.getString(R.string.gallery_montage_complete_format, 4, 1),
+        )
+        assertEquals(
+            "Original capture • 123 bytes",
+            english.getString(R.string.gallery_export_asset_detail, "Original capture", 123L),
+        )
+        assertEquals(
+            "Capture d’origine • 123 octets",
+            french.getString(R.string.gallery_export_asset_detail, "Capture d’origine", 123L),
         )
     }
 
