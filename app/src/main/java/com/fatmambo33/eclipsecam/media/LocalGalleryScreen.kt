@@ -337,54 +337,72 @@ private fun SessionDetail(
             item {
                 DetailCard(
                     stringResource(R.string.gallery_captured_phases_title),
-                    CapturePhase.entries.joinToString("\n") { phase ->
-                        stringResource(
-                            R.string.gallery_phase_count_format,
-                            phaseLabel(phase),
-                            session.phaseCounts[phase] ?: 0,
-                        )
-                    },
+                    capturedPhasesBody(session),
                 )
             }
         }
         item {
             DetailCard(
                 stringResource(R.string.gallery_generated_outputs_title),
-                if (session.generatedAssets.isEmpty()) {
-                    stringResource(R.string.gallery_generated_outputs_empty)
-                } else {
-                    session.generatedAssets.joinToString("\n") { asset ->
-                        stringResource(
-                            R.string.gallery_generated_asset_format,
-                            assetLabel(asset.kind),
-                            asset.file.name,
-                            formatBytes(asset.sizeBytes),
-                        )
-                    }
-                },
+                generatedOutputsBody(session),
             )
         }
         item {
             DetailCard(
                 stringResource(R.string.gallery_original_captures_title),
-                if (session.captures.isEmpty()) {
-                    stringResource(R.string.gallery_original_captures_empty)
-                } else {
-                    session.captures.take(12).joinToString("\n") { asset ->
-                        stringResource(
-                            R.string.gallery_original_asset_format,
-                            asset.file.name,
-                            formatBytes(asset.sizeBytes),
-                        )
-                    } + if (session.captures.size > 12) {
-                        "\n" + stringResource(R.string.gallery_more_captures_format, session.captures.size - 12)
-                    } else {
-                        ""
-                    }
-                },
+                originalCapturesBody(session),
             )
         }
     }
+}
+
+@Composable
+private fun capturedPhasesBody(session: LocalCaptureSession): String {
+    val lines = mutableListOf<String>()
+    for (phase in CapturePhase.entries) {
+        lines += stringResource(
+            R.string.gallery_phase_count_format,
+            phaseLabel(phase),
+            session.phaseCounts[phase] ?: 0,
+        )
+    }
+    return lines.joinToString("\n")
+}
+
+@Composable
+private fun generatedOutputsBody(session: LocalCaptureSession): String {
+    if (session.generatedAssets.isEmpty()) {
+        return stringResource(R.string.gallery_generated_outputs_empty)
+    }
+    val lines = mutableListOf<String>()
+    for (asset in session.generatedAssets) {
+        lines += stringResource(
+            R.string.gallery_generated_asset_format,
+            assetLabel(asset.kind),
+            asset.file.name,
+            formatBytes(asset.sizeBytes),
+        )
+    }
+    return lines.joinToString("\n")
+}
+
+@Composable
+private fun originalCapturesBody(session: LocalCaptureSession): String {
+    if (session.captures.isEmpty()) {
+        return stringResource(R.string.gallery_original_captures_empty)
+    }
+    val lines = mutableListOf<String>()
+    for (asset in session.captures.take(12)) {
+        lines += stringResource(
+            R.string.gallery_original_asset_format,
+            asset.file.name,
+            formatBytes(asset.sizeBytes),
+        )
+    }
+    if (session.captures.size > 12) {
+        lines += stringResource(R.string.gallery_more_captures_format, session.captures.size - 12)
+    }
+    return lines.joinToString("\n")
 }
 
 @Composable
@@ -479,13 +497,12 @@ private fun DetailCard(title: String, body: String) {
 @Composable
 private fun phaseSummary(session: LocalCaptureSession): String? {
     if (session.phaseCounts.isEmpty()) return null
-    return CapturePhase.entries
-        .mapNotNull { phase ->
-            session.phaseCounts[phase]?.let { count ->
-                stringResource(R.string.gallery_phase_summary_item_format, phaseLabel(phase), count)
-            }
-        }
-        .joinToString(" • ")
+    val parts = mutableListOf<String>()
+    for (phase in CapturePhase.entries) {
+        val count = session.phaseCounts[phase] ?: continue
+        parts += stringResource(R.string.gallery_phase_summary_item_format, phaseLabel(phase), count)
+    }
+    return parts.joinToString(" • ")
 }
 
 @Composable
