@@ -27,15 +27,19 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.fatmambo33.eclipsecam.R
 import com.fatmambo33.eclipsecam.capture.CapturePhase
 import java.io.File
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -52,7 +56,7 @@ private val GalleryReady = Color(0xFF4ADE80)
 private sealed interface GalleryUiState {
     data object Loading : GalleryUiState
     data class Ready(val sessions: List<LocalCaptureSession>) : GalleryUiState
-    data class Error(val message: String) : GalleryUiState
+    data object Error : GalleryUiState
 }
 
 private sealed interface TimelapseUiState {
@@ -89,9 +93,7 @@ fun LocalGalleryScreen(rootDirectory: File? = null) {
             runCatching { LocalSessionIndex(root).listSessions() }
                 .fold(
                     onSuccess = GalleryUiState::Ready,
-                    onFailure = { error ->
-                        GalleryUiState.Error(error.message ?: "Unable to read local eclipse sessions.")
-                    },
+                    onFailure = { GalleryUiState.Error },
                 )
         }
     }
@@ -141,9 +143,9 @@ fun LocalGalleryScreen(rootDirectory: File? = null) {
     Column(
         modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 18.dp),
     ) {
-        Text("EclipseCam", style = MaterialTheme.typography.labelLarge, color = GalleryAccent)
+        Text(stringResource(R.string.app_name), style = MaterialTheme.typography.labelLarge, color = GalleryAccent)
         Text(
-            "Your eclipse sessions",
+            stringResource(R.string.gallery_sessions_title),
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(top = 4.dp, bottom = 20.dp),
@@ -151,7 +153,7 @@ fun LocalGalleryScreen(rootDirectory: File? = null) {
 
         when (val current = state) {
             GalleryUiState.Loading -> LoadingState()
-            is GalleryUiState.Error -> ErrorState(current.message)
+            GalleryUiState.Error -> ErrorState()
             is GalleryUiState.Ready -> if (current.sessions.isEmpty()) {
                 EmptyState()
             } else {
@@ -174,7 +176,7 @@ private fun LoadingState() {
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         CircularProgressIndicator()
-        Text("Reading local sessions…", color = GalleryMuted)
+        Text(stringResource(R.string.gallery_sessions_loading), color = GalleryMuted)
     }
 }
 
@@ -186,9 +188,13 @@ private fun EmptyState() {
         colors = CardDefaults.cardColors(containerColor = GalleryCard),
     ) {
         Column(Modifier.padding(22.dp)) {
-            Text("Nothing captured yet", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
             Text(
-                "Photos and generated media stay on this phone until you explicitly export or share them.",
+                stringResource(R.string.gallery_sessions_empty_title),
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+            )
+            Text(
+                stringResource(R.string.gallery_sessions_empty_body),
                 modifier = Modifier.padding(top = 12.dp),
                 color = GalleryMuted,
             )
@@ -197,15 +203,23 @@ private fun EmptyState() {
 }
 
 @Composable
-private fun ErrorState(message: String) {
+private fun ErrorState() {
     Card(
         modifier = Modifier.fillMaxWidth().testTag("gallery-error"),
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = GalleryCard),
     ) {
         Column(Modifier.padding(22.dp)) {
-            Text("Gallery unavailable", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-            Text(message, modifier = Modifier.padding(top = 12.dp), color = GalleryFailed)
+            Text(
+                stringResource(R.string.gallery_sessions_error_title),
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+            )
+            Text(
+                stringResource(R.string.gallery_sessions_error_body),
+                modifier = Modifier.padding(top = 12.dp),
+                color = GalleryFailed,
+            )
         }
     }
 }
@@ -249,14 +263,17 @@ private fun SessionCard(session: LocalCaptureSession, onClick: () -> Unit) {
                 )
             }
             Text(
-                SESSION_DATE.format(session.capturedAtUtc),
+                formatSessionDate(session.capturedAtUtc),
                 modifier = Modifier.padding(top = 6.dp),
                 style = MaterialTheme.typography.bodySmall,
                 color = GalleryMuted,
             )
             Text(
-                "${session.captures.size} capture${if (session.captures.size == 1) "" else "s"} • " +
-                    "${session.generatedAssets.size} generated output${if (session.generatedAssets.size == 1) "" else "s"}",
+                stringResource(
+                    R.string.gallery_session_counts_format,
+                    session.captures.size,
+                    session.generatedAssets.size,
+                ),
                 modifier = Modifier.padding(top = 10.dp),
             )
             phaseSummary(session)?.let { summary ->
@@ -281,20 +298,25 @@ private fun SessionDetail(
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item {
-            Text("EclipseCam", style = MaterialTheme.typography.labelLarge, color = GalleryAccent)
+            Text(stringResource(R.string.app_name), style = MaterialTheme.typography.labelLarge, color = GalleryAccent)
             Text(
                 session.sessionId,
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(top = 4.dp, bottom = 8.dp),
             )
-            Button(onClick = onBack) { Text("Back to sessions") }
+            Button(onClick = onBack) { Text(stringResource(R.string.gallery_back_to_sessions)) }
         }
         item {
             DetailCard(
-                "Session",
-                "${statusLabel(session.status)} • ${SESSION_DATE.format(session.capturedAtUtc)}\n" +
-                    "${session.captures.size} captures • ${formatBytes(session.assets.sumOf(LocalSessionAsset::sizeBytes))}",
+                stringResource(R.string.gallery_session_detail_title),
+                stringResource(
+                    R.string.gallery_session_detail_format,
+                    statusLabel(session.status),
+                    formatSessionDate(session.capturedAtUtc),
+                    session.captures.size,
+                    formatBytes(session.assets.sumOf(LocalSessionAsset::sizeBytes)),
+                ),
             )
         }
         item {
@@ -314,38 +336,73 @@ private fun SessionDetail(
         if (session.phaseCounts.isNotEmpty()) {
             item {
                 DetailCard(
-                    "Captured phases",
-                    CapturePhase.entries.joinToString("\n") { phase ->
-                        "${phaseLabel(phase)}: ${session.phaseCounts[phase] ?: 0}"
-                    },
+                    stringResource(R.string.gallery_captured_phases_title),
+                    capturedPhasesBody(session),
                 )
             }
         }
         item {
             DetailCard(
-                "Generated outputs",
-                if (session.generatedAssets.isEmpty()) {
-                    "None yet. Originals remain available locally."
-                } else {
-                    session.generatedAssets.joinToString("\n") { asset ->
-                        "${assetLabel(asset.kind)} • ${asset.file.name} • ${formatBytes(asset.sizeBytes)}"
-                    }
-                },
+                stringResource(R.string.gallery_generated_outputs_title),
+                generatedOutputsBody(session),
             )
         }
         item {
             DetailCard(
-                "Original captures",
-                if (session.captures.isEmpty()) {
-                    "No readable JPEG captures found. The session remains visible for recovery and diagnostics."
-                } else {
-                    session.captures.take(12).joinToString("\n") { asset ->
-                        "${asset.file.name} • ${formatBytes(asset.sizeBytes)}"
-                    } + if (session.captures.size > 12) "\n+${session.captures.size - 12} more" else ""
-                },
+                stringResource(R.string.gallery_original_captures_title),
+                originalCapturesBody(session),
             )
         }
     }
+}
+
+@Composable
+private fun capturedPhasesBody(session: LocalCaptureSession): String {
+    val lines = mutableListOf<String>()
+    for (phase in CapturePhase.entries) {
+        lines += stringResource(
+            R.string.gallery_phase_count_format,
+            phaseLabel(phase),
+            session.phaseCounts[phase] ?: 0,
+        )
+    }
+    return lines.joinToString("\n")
+}
+
+@Composable
+private fun generatedOutputsBody(session: LocalCaptureSession): String {
+    if (session.generatedAssets.isEmpty()) {
+        return stringResource(R.string.gallery_generated_outputs_empty)
+    }
+    val lines = mutableListOf<String>()
+    for (asset in session.generatedAssets) {
+        lines += stringResource(
+            R.string.gallery_generated_asset_format,
+            assetLabel(asset.kind),
+            asset.file.name,
+            formatBytes(asset.sizeBytes),
+        )
+    }
+    return lines.joinToString("\n")
+}
+
+@Composable
+private fun originalCapturesBody(session: LocalCaptureSession): String {
+    if (session.captures.isEmpty()) {
+        return stringResource(R.string.gallery_original_captures_empty)
+    }
+    val lines = mutableListOf<String>()
+    for (asset in session.captures.take(12)) {
+        lines += stringResource(
+            R.string.gallery_original_asset_format,
+            asset.file.name,
+            formatBytes(asset.sizeBytes),
+        )
+    }
+    if (session.captures.size > 12) {
+        lines += stringResource(R.string.gallery_more_captures_format, session.captures.size - 12)
+    }
+    return lines.joinToString("\n")
 }
 
 @Composable
@@ -362,25 +419,27 @@ private fun TimelapseCard(
         colors = CardDefaults.cardColors(containerColor = GalleryCard),
     ) {
         Column(Modifier.padding(18.dp)) {
-            Text("Local timelapse", fontWeight = FontWeight.Bold)
+            Text(stringResource(R.string.gallery_timelapse_title), fontWeight = FontWeight.Bold)
             Text(
-                "Silent H.264 video in an MP4 container. Rendering stays on this phone and never modifies the original captures.",
+                stringResource(R.string.gallery_timelapse_body),
                 modifier = Modifier.padding(top = 8.dp, bottom = 12.dp),
                 color = GalleryMuted,
             )
             when (state) {
                 TimelapseUiState.Idle -> Text(
-                    if (hasTimelapse) "A complete timelapse is available." else "Ready to render from readable original JPEGs.",
+                    stringResource(
+                        if (hasTimelapse) R.string.gallery_timelapse_available else R.string.gallery_timelapse_ready,
+                    ),
                     color = GalleryMuted,
                     modifier = Modifier.testTag("timelapse-status"),
                 )
                 is TimelapseUiState.Rendering -> Text(
-                    "Rendering ${state.progress}%",
+                    stringResource(R.string.gallery_timelapse_rendering_format, state.progress),
                     color = GalleryAccent,
                     modifier = Modifier.testTag("timelapse-status"),
                 )
                 is TimelapseUiState.Complete -> Text(
-                    "Complete • ${state.frameCount} frame${if (state.frameCount == 1) "" else "s"}",
+                    stringResource(R.string.gallery_timelapse_complete_format, state.frameCount),
                     color = GalleryReady,
                     modifier = Modifier.testTag("timelapse-status"),
                 )
@@ -390,7 +449,7 @@ private fun TimelapseCard(
                     modifier = Modifier.testTag("timelapse-status"),
                 )
                 TimelapseUiState.Cancelled -> Text(
-                    "Cancelled. Partial output was removed.",
+                    stringResource(R.string.gallery_timelapse_cancelled),
                     color = GalleryWarning,
                     modifier = Modifier.testTag("timelapse-status"),
                 )
@@ -398,7 +457,7 @@ private fun TimelapseCard(
             Spacer(Modifier.height(12.dp))
             if (state is TimelapseUiState.Rendering) {
                 Button(onClick = onCancel, modifier = Modifier.testTag("timelapse-cancel")) {
-                    Text("Cancel render")
+                    Text(stringResource(R.string.gallery_timelapse_cancel))
                 }
             } else {
                 Button(
@@ -406,7 +465,15 @@ private fun TimelapseCard(
                     enabled = session.captures.isNotEmpty(),
                     modifier = Modifier.testTag("timelapse-start"),
                 ) {
-                    Text(if (hasTimelapse) "Regenerate timelapse" else "Generate timelapse")
+                    Text(
+                        stringResource(
+                            if (hasTimelapse) {
+                                R.string.gallery_timelapse_regenerate
+                            } else {
+                                R.string.gallery_timelapse_generate
+                            },
+                        ),
+                    )
                 }
             }
         }
@@ -427,25 +494,35 @@ private fun DetailCard(title: String, body: String) {
     }
 }
 
+@Composable
 private fun phaseSummary(session: LocalCaptureSession): String? {
     if (session.phaseCounts.isEmpty()) return null
-    return CapturePhase.entries
-        .mapNotNull { phase -> session.phaseCounts[phase]?.let { count -> "${phaseLabel(phase)} $count" } }
-        .joinToString(" • ")
+    val parts = mutableListOf<String>()
+    for (phase in CapturePhase.entries) {
+        val count = session.phaseCounts[phase] ?: continue
+        parts += stringResource(R.string.gallery_phase_summary_item_format, phaseLabel(phase), count)
+    }
+    return parts.joinToString(" • ")
 }
 
-private fun phaseLabel(phase: CapturePhase): String = when (phase) {
-    CapturePhase.PARTIAL -> "Partial"
-    CapturePhase.CONTACT_BURST -> "Contact burst"
-    CapturePhase.TOTALITY -> "Totality"
-}
+@Composable
+private fun phaseLabel(phase: CapturePhase): String = stringResource(
+    when (phase) {
+        CapturePhase.PARTIAL -> R.string.gallery_phase_partial
+        CapturePhase.CONTACT_BURST -> R.string.gallery_phase_contact_burst
+        CapturePhase.TOTALITY -> R.string.gallery_phase_totality
+    },
+)
 
-private fun statusLabel(status: LocalSessionStatus): String = when (status) {
-    LocalSessionStatus.COMPLETE -> "Complete"
-    LocalSessionStatus.PAUSED -> "Paused"
-    LocalSessionStatus.FAILED -> "Failed"
-    LocalSessionStatus.INTERRUPTED -> "Interrupted"
-}
+@Composable
+private fun statusLabel(status: LocalSessionStatus): String = stringResource(
+    when (status) {
+        LocalSessionStatus.COMPLETE -> R.string.gallery_status_complete
+        LocalSessionStatus.PAUSED -> R.string.gallery_status_paused
+        LocalSessionStatus.FAILED -> R.string.gallery_status_failed
+        LocalSessionStatus.INTERRUPTED -> R.string.gallery_status_interrupted
+    },
+)
 
 private fun statusColor(status: LocalSessionStatus): Color = when (status) {
     LocalSessionStatus.COMPLETE -> GalleryReady
@@ -454,23 +531,37 @@ private fun statusColor(status: LocalSessionStatus): Color = when (status) {
     LocalSessionStatus.INTERRUPTED -> GalleryWarning
 }
 
-private fun assetLabel(kind: LocalSessionAssetKind): String = when (kind) {
-    LocalSessionAssetKind.ORIGINAL_CAPTURE -> "Original"
-    LocalSessionAssetKind.TIMELAPSE -> "Timelapse"
-    LocalSessionAssetKind.MONTAGE -> "Montage"
-    LocalSessionAssetKind.CAPTURE_REPORT -> "Capture report"
-    LocalSessionAssetKind.GENERATED -> "Generated"
-}
+@Composable
+private fun assetLabel(kind: LocalSessionAssetKind): String = stringResource(
+    when (kind) {
+        LocalSessionAssetKind.ORIGINAL_CAPTURE -> R.string.gallery_asset_original
+        LocalSessionAssetKind.TIMELAPSE -> R.string.gallery_asset_timelapse
+        LocalSessionAssetKind.MONTAGE -> R.string.gallery_asset_montage
+        LocalSessionAssetKind.CAPTURE_REPORT -> R.string.gallery_asset_report
+        LocalSessionAssetKind.GENERATED -> R.string.gallery_asset_generated
+    },
+)
 
+@Composable
 private fun formatBytes(bytes: Long): String = when {
-    bytes >= 1024L * 1024L -> "%.1f MB".format(bytes.toDouble() / (1024.0 * 1024.0))
-    bytes >= 1024L -> "%.1f KB".format(bytes.toDouble() / 1024.0)
-    else -> "$bytes B"
+    bytes >= 1024L * 1024L -> stringResource(
+        R.string.gallery_size_megabytes_format,
+        bytes.toDouble() / (1024.0 * 1024.0),
+    )
+    bytes >= 1024L -> stringResource(
+        R.string.gallery_size_kilobytes_format,
+        bytes.toDouble() / 1024.0,
+    )
+    else -> stringResource(R.string.gallery_size_bytes_format, bytes)
 }
 
-private val SESSION_DATE: DateTimeFormatter = DateTimeFormatter
-    .ofPattern("yyyy-MM-dd HH:mm")
-    .withZone(ZoneId.systemDefault())
-
-@Suppress("unused")
-private fun formatInstant(instant: Instant): String = SESSION_DATE.format(instant)
+@Composable
+private fun formatSessionDate(instant: Instant): String {
+    val locale = LocalConfiguration.current.locales[0]
+    val formatter = remember(locale) {
+        DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT)
+            .withLocale(locale)
+            .withZone(ZoneId.systemDefault())
+    }
+    return formatter.format(instant)
+}
