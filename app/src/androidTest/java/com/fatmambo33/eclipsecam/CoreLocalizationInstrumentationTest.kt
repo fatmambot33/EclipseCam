@@ -21,6 +21,10 @@ class CoreLocalizationInstrumentationTest {
         assertEquals("Autoriser la caméra", context.getString(R.string.enable_camera))
         assertEquals("Autoriser la localisation", context.getString(R.string.enable_location))
         assertEquals("Capture de l’éclipse armée", context.getString(R.string.capture_notification_title))
+        assertEquals("Vos sessions d’éclipse", context.getString(R.string.gallery_sessions_title))
+        assertEquals("Retour aux sessions", context.getString(R.string.gallery_back_to_sessions))
+        assertEquals("Timelapse local", context.getString(R.string.gallery_timelapse_title))
+        assertEquals("Générer le timelapse", context.getString(R.string.gallery_timelapse_generate))
         assertEquals("Montage par phase", context.getString(R.string.gallery_montage_title))
         assertEquals("Générer le montage", context.getString(R.string.gallery_montage_generate))
         assertEquals(
@@ -32,6 +36,8 @@ class CoreLocalizationInstrumentationTest {
         assertEquals("Choisir la destination d’export", context.getString(R.string.gallery_export_choose_destination))
         assertEquals("Partager un média EclipseCam", context.getString(R.string.gallery_export_share_chooser))
         assertFalse(context.getString(R.string.solar_safety_warning).contains("Never look"))
+        assertFalse(context.getString(R.string.gallery_sessions_empty_body).contains("Photos and"))
+        assertFalse(context.getString(R.string.gallery_timelapse_body).contains("Silent H.264"))
         assertFalse(context.getString(R.string.gallery_montage_body).contains("Choose which"))
         assertFalse(context.getString(R.string.gallery_export_body).contains("Nothing leaves"))
         assertFalse(context.getString(R.string.gallery_export_privacy_remove).contains("Privacy default"))
@@ -57,6 +63,18 @@ class CoreLocalizationInstrumentationTest {
         val english = localizedContext(Locale.ENGLISH)
         val french = localizedContext(Locale.FRENCH)
 
+        assertEquals(
+            "Captures: 3 • Generated outputs: 2",
+            english.getString(R.string.gallery_session_counts_format, 3, 2),
+        )
+        assertEquals(
+            "Captures : 3 • Médias générés : 2",
+            french.getString(R.string.gallery_session_counts_format, 3, 2),
+        )
+        assertEquals("Rendering 42%", english.getString(R.string.gallery_timelapse_rendering_format, 42))
+        assertEquals("Génération 42 %", french.getString(R.string.gallery_timelapse_rendering_format, 42))
+        assertEquals("1.5 MB", english.getString(R.string.gallery_size_megabytes_format, 1.5))
+        assertEquals("1,5 Mo", french.getString(R.string.gallery_size_megabytes_format, 1.5))
         assertEquals(
             "Complete • 4 selected • 1 missing",
             english.getString(R.string.gallery_montage_complete_format, 4, 1),
