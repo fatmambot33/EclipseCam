@@ -47,6 +47,11 @@ jobs:
       - name: Re-run runtime privacy audit
         run: python3 .github/scripts/audit-privacy.py
 
+      - name: Verify English/French localization contract
+        run: |
+          python3 .github/scripts/test-verify-localization.py
+          python3 .github/scripts/verify-localization.py
+
       - name: Test, lint and build unsigned release AAB
         run: gradle --no-daemon testDebugUnitTest lintRelease bundleRelease
 
