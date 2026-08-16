@@ -45,6 +45,32 @@ class LocalizationVerifierTest(unittest.TestCase):
                 MODULE.validate_resources(english, french),
             )
 
+    def test_blank_translation_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            english = root / "en.xml"
+            french = root / "fr.xml"
+            write_strings(english, {"title": "Ready", "detail": "Local only"})
+            write_strings(french, {"title": "Prêt", "detail": "   "})
+
+            self.assertIn(
+                "French resources blank: detail",
+                MODULE.validate_resources(english, french),
+            )
+
+    def test_blank_english_source_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            english = root / "en.xml"
+            french = root / "fr.xml"
+            write_strings(english, {"title": ""})
+            write_strings(french, {"title": "Titre"})
+
+            self.assertIn(
+                "English resources blank: title",
+                MODULE.validate_resources(english, french),
+            )
+
     def test_formatter_mismatch_fails(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
