@@ -41,6 +41,11 @@ jobs:
       - name: Audit runtime privacy and Data Safety evidence
         run: python3 .github/scripts/audit-privacy.py
 
+      - name: Verify English/French localization contract
+        run: |
+          python3 .github/scripts/test-verify-localization.py
+          python3 .github/scripts/verify-localization.py
+
       - name: Test, lint and build debug APKs
         env:
           MAPS_API_KEY: ${{ secrets.MAPS_API_KEY }}

@@ -52,6 +52,13 @@ def validate_resources(english: Path = ENGLISH, french: Path = FRENCH) -> list[s
     if extra_fr:
         errors.append("French-only resources without English source: " + ", ".join(extra_fr))
 
+    blank_en = sorted(name for name, value in en.items() if not value.strip())
+    blank_fr = sorted(name for name, value in fr.items() if not value.strip())
+    if blank_en:
+        errors.append("English resources blank: " + ", ".join(blank_en))
+    if blank_fr:
+        errors.append("French resources blank: " + ", ".join(blank_fr))
+
     for name in sorted(set(en) & set(fr)):
         en_signature = format_signature(en[name])
         fr_signature = format_signature(fr[name])
