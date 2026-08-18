@@ -1,0 +1,6 @@
+<resources>
+    <string name="gallery_montage_error_no_readable_frames">No readable capture with eclipse-phase information is available for this montage.</string>
+    <string name="gallery_montage_error_storage">EclipseCam could not prepare local storage for the montage. Check available storage and try again.</string>
+    <string name="gallery_montage_error_empty_output">The montage could not be completed. Your original captures are unchanged.</string>
+    <string name="gallery_montage_error_render_failed">Montage rendering failed locally. Your original captures are unchanged.</string>
+</resources>

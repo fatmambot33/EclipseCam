@@ -39,7 +39,7 @@ private sealed interface MontageUiState {
     data object Idle : MontageUiState
     data object Rendering : MontageUiState
     data class Complete(val frameCount: Int, val missingCount: Int) : MontageUiState
-    data class Failed(val reason: String) : MontageUiState
+    data class Failed(val presentation: MontageFailurePresentation) : MontageUiState
 }
 
 /** Phase-aware montage plus explicit export/share actions embedded in one Gallery detail. */
@@ -142,7 +142,7 @@ fun LocalMontageCard(
                         modifier = Modifier.testTag("montage-status"),
                     )
                     is MontageUiState.Failed -> Text(
-                        current.reason,
+                        stringResource(montageFailureStringResource(current.presentation)),
                         color = MontageFailed,
                         modifier = Modifier.testTag("montage-status"),
                     )
@@ -163,8 +163,12 @@ fun LocalMontageCard(
                                         )
                                         onGenerated()
                                     }
-                                    is MontageRenderResult.NoFrames -> state = MontageUiState.Failed(result.reason)
-                                    is MontageRenderResult.Failed -> state = MontageUiState.Failed(result.reason)
+                                    is MontageRenderResult.NoFrames -> state = MontageUiState.Failed(
+                                        montageFailurePresentation(result.reason),
+                                    )
+                                    is MontageRenderResult.Failed -> state = MontageUiState.Failed(
+                                        montageFailurePresentation(result.reason),
+                                    )
                                 }
                             } catch (cancelled: CancellationException) {
                                 throw cancelled
@@ -199,6 +203,13 @@ private fun montageSlotLabelResource(slot: MontageSlot): String = stringResource
         MontageSlot.PARTIAL_LATE -> R.string.gallery_montage_slot_partial_late
     },
 )
+
+private fun montageFailureStringResource(presentation: MontageFailurePresentation): Int = when (presentation) {
+    MontageFailurePresentation.NO_READABLE_PHASE_FRAMES -> R.string.gallery_montage_error_no_readable_frames
+    MontageFailurePresentation.GENERATED_DIRECTORY_UNAVAILABLE -> R.string.gallery_montage_error_storage
+    MontageFailurePresentation.EMPTY_RENDER_OUTPUT -> R.string.gallery_montage_error_empty_output
+    MontageFailurePresentation.RENDER_FAILED -> R.string.gallery_montage_error_render_failed
+}
 
 fun montageSlotLabel(slot: MontageSlot): String = when (slot) {
     MontageSlot.PARTIAL_EARLY -> "Partial • early"
