@@ -101,6 +101,10 @@
     <string name="gallery_timelapse_rendering_format">Génération %1$d %%</string>
     <string name="gallery_timelapse_complete_format">Terminé • Images : %1$d</string>
     <string name="gallery_timelapse_cancelled">Annulé. Le résultat partiel a été supprimé.</string>
+    <string name="gallery_timelapse_failure_no_frames">Aucune capture JPEG originale lisible n’est disponible pour ce timelapse.</string>
+    <string name="gallery_timelapse_failure_directory">EclipseCam n’a pas pu préparer le stockage local du timelapse.</string>
+    <string name="gallery_timelapse_failure_empty_output">L’encodeur du timelapse n’a pas produit de vidéo lisible.</string>
+    <string name="gallery_timelapse_failure_render">Le timelapse n’a pas pu être généré. Vos captures originales restent inchangées.</string>
     <string name="gallery_timelapse_cancel">Annuler le rendu</string>
     <string name="gallery_timelapse_regenerate">Regénérer le timelapse</string>
     <string name="gallery_timelapse_generate">Générer le timelapse</string>
