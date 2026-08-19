@@ -107,6 +107,10 @@
     <string name="gallery_timelapse_rendering_format">Rendering %1$d%%</string>
     <string name="gallery_timelapse_complete_format">Complete • Frames: %1$d</string>
     <string name="gallery_timelapse_cancelled">Cancelled. Partial output was removed.</string>
+    <string name="gallery_timelapse_failure_no_frames">No readable original JPEG captures are available for this timelapse.</string>
+    <string name="gallery_timelapse_failure_directory">EclipseCam could not prepare local storage for the timelapse.</string>
+    <string name="gallery_timelapse_failure_empty_output">The timelapse encoder did not produce a playable video.</string>
+    <string name="gallery_timelapse_failure_render">The timelapse could not be rendered. Your original captures are unchanged.</string>
     <string name="gallery_timelapse_cancel">Cancel render</string>
     <string name="gallery_timelapse_regenerate">Regenerate timelapse</string>
     <string name="gallery_timelapse_generate">Generate timelapse</string>
