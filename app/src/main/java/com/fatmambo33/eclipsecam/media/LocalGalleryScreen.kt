@@ -63,7 +63,7 @@ private sealed interface TimelapseUiState {
     data object Idle : TimelapseUiState
     data class Rendering(val progress: Int) : TimelapseUiState
     data class Complete(val frameCount: Int) : TimelapseUiState
-    data class Failed(val reason: String) : TimelapseUiState
+    data class Failed(val presentation: TimelapseFailurePresentation) : TimelapseUiState
     data object Cancelled : TimelapseUiState
 }
 
@@ -122,10 +122,14 @@ fun LocalGalleryScreen(rootDirectory: File? = null) {
                                     refreshToken += 1
                                 }
                                 is TimelapseRenderResult.NoFrames -> {
-                                    timelapseState = TimelapseUiState.Failed(result.reason)
+                                    timelapseState = TimelapseUiState.Failed(
+                                        timelapseFailurePresentation(result.reason),
+                                    )
                                 }
                                 is TimelapseRenderResult.Failed -> {
-                                    timelapseState = TimelapseUiState.Failed(result.reason)
+                                    timelapseState = TimelapseUiState.Failed(
+                                        timelapseFailurePresentation(result.reason),
+                                    )
                                 }
                             }
                         } catch (_: CancellationException) {
@@ -444,7 +448,7 @@ private fun TimelapseCard(
                     modifier = Modifier.testTag("timelapse-status"),
                 )
                 is TimelapseUiState.Failed -> Text(
-                    state.reason,
+                    timelapseFailureMessage(state.presentation),
                     color = GalleryFailed,
                     modifier = Modifier.testTag("timelapse-status"),
                 )
@@ -479,6 +483,16 @@ private fun TimelapseCard(
         }
     }
 }
+
+@Composable
+private fun timelapseFailureMessage(presentation: TimelapseFailurePresentation): String = stringResource(
+    when (presentation) {
+        TimelapseFailurePresentation.NO_READABLE_FRAMES -> R.string.gallery_timelapse_failure_no_frames
+        TimelapseFailurePresentation.GENERATED_DIRECTORY_UNAVAILABLE -> R.string.gallery_timelapse_failure_directory
+        TimelapseFailurePresentation.EMPTY_VIDEO_OUTPUT -> R.string.gallery_timelapse_failure_empty_output
+        TimelapseFailurePresentation.RENDER_FAILED -> R.string.gallery_timelapse_failure_render
+    },
+)
 
 @Composable
 private fun DetailCard(title: String, body: String) {
