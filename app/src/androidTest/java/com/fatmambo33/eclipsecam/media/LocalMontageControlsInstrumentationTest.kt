@@ -1,5 +1,10 @@
 package com.fatmambo33.eclipsecam.media
 
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -7,6 +12,7 @@ import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.fatmambo33.eclipsecam.MainActivity
 import com.fatmambo33.eclipsecam.capture.CaptureInstruction
@@ -70,15 +76,37 @@ class LocalMontageControlsInstrumentationTest {
 
     @Test
     fun galleryExposesPhaseSelectionAndGenerationControls() {
-        compose.onNodeWithTag("tab-gallery").performClick()
-        waitForTag("gallery-session-montage-controls")
-        compose.onNodeWithTag("gallery-session-montage-controls").performClick()
-        waitForTag("montage-card")
+        openMontage()
 
         compose.onNodeWithTag("montage-card").performScrollTo().assertIsDisplayed()
         compose.onNodeWithTag("montage-slot-totality").performScrollTo().assertIsDisplayed().performClick()
         compose.onNodeWithTag("montage-slot-totality").assertIsNotSelected()
-        compose.onNodeWithTag("montage-generate").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag("montage-generate")
+            .performScrollTo()
+            .assertIsDisplayed()
+            .assertHeightIsAtLeast(48.dp)
+    }
+
+    @Test
+    fun montageStatusAnnouncesChangesPolitely() {
+        openMontage()
+
+        compose.onNodeWithTag("montage-status")
+            .performScrollTo()
+            .assertIsDisplayed()
+            .assert(
+                SemanticsMatcher.expectValue(
+                    SemanticsProperties.LiveRegion,
+                    LiveRegionMode.Polite,
+                ),
+            )
+    }
+
+    private fun openMontage() {
+        compose.onNodeWithTag("tab-gallery").performClick()
+        waitForTag("gallery-session-montage-controls")
+        compose.onNodeWithTag("gallery-session-montage-controls").performClick()
+        waitForTag("montage-card")
     }
 
     private fun waitForTag(tag: String) {

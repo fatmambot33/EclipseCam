@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -23,6 +24,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.fatmambo33.eclipsecam.R
@@ -70,6 +74,9 @@ fun LocalMontageCard(
         MontageFrameSelector.select(session.captures, includedSlots)
     }
     val hasMontage = session.generatedAssets.any { it.kind == LocalSessionAssetKind.MONTAGE }
+    val statusModifier = Modifier
+        .testTag("montage-status")
+        .semantics { liveRegion = LiveRegionMode.Polite }
 
     Column(modifier = Modifier.fillMaxWidth()) {
         Card(
@@ -125,12 +132,12 @@ fun LocalMontageCard(
                             stringResource(R.string.gallery_montage_ready)
                         },
                         color = MontageMuted,
-                        modifier = Modifier.testTag("montage-status"),
+                        modifier = statusModifier,
                     )
                     MontageUiState.Rendering -> Text(
                         stringResource(R.string.gallery_montage_generating),
                         color = MontageAccent,
-                        modifier = Modifier.testTag("montage-status"),
+                        modifier = statusModifier,
                     )
                     is MontageUiState.Complete -> Text(
                         stringResource(
@@ -139,12 +146,12 @@ fun LocalMontageCard(
                             current.missingCount,
                         ),
                         color = MontageReady,
-                        modifier = Modifier.testTag("montage-status"),
+                        modifier = statusModifier,
                     )
                     is MontageUiState.Failed -> Text(
                         stringResource(montageFailureStringResource(current.presentation)),
                         color = MontageFailed,
-                        modifier = Modifier.testTag("montage-status"),
+                        modifier = statusModifier,
                     )
                 }
 
@@ -175,7 +182,9 @@ fun LocalMontageCard(
                             }
                         }
                     },
-                    modifier = Modifier.testTag("montage-generate"),
+                    modifier = Modifier
+                        .heightIn(min = 48.dp)
+                        .testTag("montage-generate"),
                 ) {
                     Text(
                         if (hasMontage) {
@@ -209,12 +218,4 @@ private fun montageFailureStringResource(presentation: MontageFailurePresentatio
     MontageFailurePresentation.GENERATED_DIRECTORY_UNAVAILABLE -> R.string.gallery_montage_error_storage
     MontageFailurePresentation.EMPTY_RENDER_OUTPUT -> R.string.gallery_montage_error_empty_output
     MontageFailurePresentation.RENDER_FAILED -> R.string.gallery_montage_error_render_failed
-}
-
-fun montageSlotLabel(slot: MontageSlot): String = when (slot) {
-    MontageSlot.PARTIAL_EARLY -> "Partial • early"
-    MontageSlot.CONTACT_EARLY -> "Contact burst • early"
-    MontageSlot.TOTALITY -> "Totality representative"
-    MontageSlot.CONTACT_LATE -> "Contact burst • late"
-    MontageSlot.PARTIAL_LATE -> "Partial • late"
 }
