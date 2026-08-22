@@ -66,10 +66,22 @@ fun CameraPreviewSurface(
         providerFuture.addListener(
             {
                 if (disposed) return@addListener
+
+                val provider = runCatching { providerFuture.get() }.getOrElse {
+                    currentOnStateChanged.value(
+                        unavailablePreviewState(context, CameraPreviewFailure.START_FAILED),
+                    )
+                    return@addListener
+                }
+                val selection = selectAvailableLens(provider)
+                if (selection == null) {
+                    currentOnStateChanged.value(
+                        unavailablePreviewState(context, CameraPreviewFailure.NO_USABLE_CAMERA),
+                    )
+                    return@addListener
+                }
+
                 runCatching {
-                    val provider = providerFuture.get()
-                    val selection = selectAvailableLens(provider)
-                        ?: error("No usable camera is available on this device.")
                     val preview = Preview.Builder().build().also {
                         it.surfaceProvider = previewView.surfaceProvider
                     }
@@ -82,10 +94,10 @@ fun CameraPreviewSurface(
                             reduceCameraPreviewState(CameraPreviewEvent.Started(lens)),
                         )
                     }
-                }.onFailure { error ->
+                }.onFailure {
                     if (!disposed) {
                         currentOnStateChanged.value(
-                            reduceCameraPreviewState(CameraPreviewEvent.Failed(error.message)),
+                            unavailablePreviewState(context, CameraPreviewFailure.START_FAILED),
                         )
                     }
                 }
@@ -101,6 +113,13 @@ fun CameraPreviewSurface(
         }
     }
 }
+
+private fun unavailablePreviewState(
+    context: Context,
+    failure: CameraPreviewFailure,
+): CameraPreviewState.Unavailable = CameraPreviewState.Unavailable(
+    context.getString(cameraPreviewFailureMessageRes(failure)),
+)
 
 private data class LensSelection(
     val selector: CameraSelector,
