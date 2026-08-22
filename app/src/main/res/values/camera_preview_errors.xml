@@ -1,0 +1,4 @@
+<resources>
+    <string name="camera_preview_failure_no_camera">No usable camera is available on this device.</string>
+    <string name="camera_preview_failure_start">EclipseCam could not start the local camera preview. Close other camera apps and try again.</string>
+</resources>

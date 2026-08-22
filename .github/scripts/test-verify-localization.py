@@ -32,6 +32,35 @@ class LocalizationVerifierTest(unittest.TestCase):
 
             self.assertEqual([], MODULE.validate_resources(english, french))
 
+    def test_matching_resources_across_multiple_files_pass(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            english = root / "values"
+            french = root / "values-fr"
+            english.mkdir()
+            french.mkdir()
+            write_strings(english / "strings.xml", {"title": "Ready"})
+            write_strings(english / "camera.xml", {"camera_error": "Camera unavailable"})
+            write_strings(french / "strings.xml", {"title": "Prêt"})
+            write_strings(french / "camera.xml", {"camera_error": "Caméra indisponible"})
+
+            self.assertEqual([], MODULE.validate_resources(english, french))
+
+    def test_duplicate_resource_across_files_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            english = root / "values"
+            french = root / "values-fr"
+            english.mkdir()
+            french.mkdir()
+            write_strings(english / "strings.xml", {"title": "Ready"})
+            write_strings(english / "extra.xml", {"title": "Still ready"})
+            write_strings(french / "strings.xml", {"title": "Prêt"})
+
+            errors = MODULE.validate_resources(english, french)
+            self.assertEqual(1, len(errors))
+            self.assertIn("duplicate string resources: title", errors[0])
+
     def test_missing_translation_fails(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
