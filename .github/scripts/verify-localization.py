@@ -10,23 +10,41 @@ from collections import Counter
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-ENGLISH = ROOT / "app/src/main/res/values/strings.xml"
-FRENCH = ROOT / "app/src/main/res/values-fr/strings.xml"
+ENGLISH = ROOT / "app/src/main/res/values"
+FRENCH = ROOT / "app/src/main/res/values-fr"
 FORMAT_TOKEN = re.compile(r"%(?:(\d+)\$)?[-#+ 0,(<]*\d*(?:\.\d+)?[a-zA-Z%]")
 
 
+def resource_files(path: Path) -> list[Path]:
+    """Return the XML resource files represented by a file or values directory."""
+    if path.is_file():
+        return [path]
+    return sorted(path.glob("*.xml"))
+
+
 def load_strings(path: Path) -> dict[str, str]:
-    """Load translatable string resources and reject duplicate names."""
-    root = ET.parse(path).getroot()
-    elements = [element for element in root if element.tag == "string"]
-    names = [element.attrib.get("name", "") for element in elements]
+    """Load translatable strings across resource XML files and reject duplicates."""
+    elements: list[tuple[Path, ET.Element]] = []
+    files = resource_files(path)
+    if not files:
+        raise OSError(f"{path}: no Android resource XML files found")
+
+    for resource_file in files:
+        root = ET.parse(resource_file).getroot()
+        elements.extend(
+            (resource_file, element)
+            for element in root
+            if element.tag == "string"
+        )
+
+    names = [element.attrib.get("name", "") for _, element in elements]
     duplicates = sorted(name for name, count in Counter(names).items() if count > 1)
     if duplicates:
         raise ValueError(f"{path}: duplicate string resources: {', '.join(duplicates)}")
 
     return {
         element.attrib["name"]: "".join(element.itertext())
-        for element in elements
+        for _, element in elements
         if element.attrib.get("translatable", "true").lower() != "false"
     }
 
