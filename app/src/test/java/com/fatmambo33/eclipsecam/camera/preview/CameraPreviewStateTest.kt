@@ -1,7 +1,7 @@
 package com.fatmambo33.eclipsecam.camera.preview
 
+import com.fatmambo33.eclipsecam.R
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class CameraPreviewStateTest {
@@ -30,25 +30,14 @@ class CameraPreviewStateTest {
     }
 
     @Test
-    fun preservesConcreteFailureReason() {
-        val state = reduceCameraPreviewState(CameraPreviewEvent.Failed("Camera is in use"))
-
+    fun mapsPreviewFailuresToStableResourceIds() {
         assertEquals(
-            CameraPreviewState.Unavailable("Camera is in use"),
-            state,
+            R.string.camera_preview_failure_no_camera,
+            cameraPreviewFailureMessageRes(CameraPreviewFailure.NO_USABLE_CAMERA),
         )
-    }
-
-    @Test
-    fun substitutesSafeReasonWhenFailureMessageIsMissing() {
-        val nullReason = reduceCameraPreviewState(CameraPreviewEvent.Failed(null))
-        val blankReason = reduceCameraPreviewState(CameraPreviewEvent.Failed("   "))
-
-        assertTrue(nullReason is CameraPreviewState.Unavailable)
-        assertEquals(nullReason, blankReason)
         assertEquals(
-            "Camera preview is unavailable on this device.",
-            (nullReason as CameraPreviewState.Unavailable).reason,
+            R.string.camera_preview_failure_start,
+            cameraPreviewFailureMessageRes(CameraPreviewFailure.START_FAILED),
         )
     }
 }
